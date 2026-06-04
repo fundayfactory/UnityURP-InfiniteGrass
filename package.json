@@ -1,0 +1,26 @@
+{
+  "name": "com.fundayfactory.infinite-grass",
+  "version": "1.0.0",
+  "displayName": "Infinite Grass",
+  "unity": "6000.3",
+  "author": {
+    "name": "Youssef Afella"
+  },
+  "dependencies": {
+    "com.unity.render-pipelines.universal": "17.3.0"
+  },
+  "description": "Infinite Grass rendering",
+  "keywords": [
+    "package",
+    "unity",
+    "grass",
+    "infinite"
+  ],
+  "samples": [
+        {
+      "displayName": "Sample Scenes",
+      "description": "Sample scenes that shows different use-cases",
+      "path": "Samples~/SampleScenes"
+    }
+  ]
+}

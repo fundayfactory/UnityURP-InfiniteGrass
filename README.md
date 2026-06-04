@@ -4,7 +4,7 @@ Fully Procedural and Dynamic Grass for Unity URP.
 It meant to be a fast to implement grass system that doesn't need any baking or having any static environemnt.</br>
 Just enable it, give it the LayerMask of the objects where you want it to be, and everything gets drawn procedurally.
 
-If you find it usefull and want to help me maintain it, please consider supporting :</br>
+If you find it usefull and want to help Youssef (not a maintainer of this fork) maintain it, please consider supporting :</br>
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/youssef_afella)
 
 ### Preview Video
@@ -14,35 +14,35 @@ Tested on RTX 3060: https://youtu.be/NwVtPIxUuCY
 Just drag the "InfiniteGrass" folder to your project then go to your URP settings and add the "GrassDataRendererFeature" to it.</br>
 From there choose the LayerMask of your Terrain mesh.</br>
 Assign the Material and the ComputeShader (Included in the folder).</br></br>
-![image](https://github.com/user-attachments/assets/c673ac00-ec45-4300-847a-7854c105efff)
+![image](Documentation~/image-render-feature-setup.png)
 
 Next, in your scene, make an empty object and add the "InfiniteGrassRenderer" script to it.</br>
 Assign the Grass Material (Included in the folder) and play with the settings until you get what you want.</br></br>
-![image](https://github.com/user-attachments/assets/cd034441-e707-45ac-88bc-c103c21d3713)
+![image](Documentation~/image-renderer.png)
 
 # Features
 ### Fully Procedural:
 You don't need to have a HeightMap or use the Unity Terrain, you can put grass on anything just by changing the LayerMask of it.</br>
 Also it doesn't require generating a big buffer of positions of the whole world, it generates just the necessary amout of positions around the camera so the Memory isn't a big concern.</br></br>
-![Image Sequence_002_0000](https://github.com/user-attachments/assets/1ef15340-b6bd-45e2-a17c-22448ebb8732)
+![Image Sequence_002_0000](Documentation~/image-example01.jpg)
 
 ### Frustum Culling and Density Decreases over Distance:
 It allows you to draw for far distances with less performance cost.</br></br>
-![image](https://github.com/user-attachments/assets/0ae48893-7149-47f1-a846-949183c8e9d9)
+![image](Documentation~/image-example02.png)
 
 ### Dynamic Color Modifier:
 It allows you to modify the color of the grass blades using any object or texture you want.</br>
 To make you own color modifier, create a new material from "InfiniteGrass/Modifiers/GrassColoringShader", give the material a texture and a color.</br>
 Finally, add a quad mesh to your scene and apply the material to it, you can then place the object wherever you want with any scale or rotation like a Decal.</br>
 There is no problem also in using Particle Systems with that shader like the waves in the preview video.</br></br>
-![Image Sequence_003_0000](https://github.com/user-attachments/assets/c1d1bef9-d3d2-4689-b8f1-3ebd2f0f75ae)
+![Image Sequence_003_0000](Documentation~/image-example03.jpg)
 
 ### Dynamic Mask and Density:
 Just like the color modifier, just make a material from "InfiniteGrass/Modifiers/GrassMaskShader" and apply it to a quad or any other mesh.</br>
 Just note that the usual meaning of "mask" here isn't what it's used, White means the grass will fully be cutout, Black means full density.</br>
 You can also instead of fully cutting out the grass make the density decrease by making the material "Opacity" property lower.</br>
 (The Red Channel of the VertexColor of your meshes also occludes the grass).</br></br>
-![Image Sequence_004_0000](https://github.com/user-attachments/assets/8e0fd3b1-f24f-44ed-994a-d8989242ac0d)
+![Image Sequence_004_0000](Documentation~/image-example04.jpg)
 
 ### Dynamic Slope:
 By "Slope" I mean the inclination of the grass blade.</br>
@@ -52,17 +52,29 @@ Green controls how much the grass is inclined to the Z axis (0: it will go to th
 There is no need to use the blue channel cause the grass can't be inclined to the Y axis (it just mean it's upward).</br>
 This is usefull if you want to make Custom Wind effects, Explosions, Stepping on grass ...</br>
 There is an example of each of these in the Sample Scene.</br></br>
-![Untitled-2](https://github.com/user-attachments/assets/17bacc32-a0c8-4479-a7a0-0e5ab7627c91)</br>
-![Untitled-3](https://github.com/user-attachments/assets/2039ce7d-0d3f-44df-aef9-023f2bc67a9f)
+![Untitled-2](Documentation~/image-example05.png)</br>
+![Untitled-3](Documentation~/image-example06.png)
+
+### Custom meshes
+A custom mesh can be set on the renderer, instead of generating a dynamic for single blade rendering.
+![Image](Documentation~/image-example07.png)
+
+### Multiple renderers
+It is possible to use multiple renderers with different materials and setups by using vertex color channels on the ground.
+The main color channels used are:
+- Red for density
+- Blue and green for variation
+
+![Image](Documentation~/image-example08.png)
 
 ### Wind System:
 Wind from texture, similar to the "Dynamic Slope" but just applied to the whole grass field.</br></br>
-![image](https://github.com/user-attachments/assets/fea2e411-ed77-45cb-87d9-c170cae28fe9)
+![image](Documentation~/image-shader-single-blade01.png)
 
 ### Stylized Billboard Grass:
 The grass blades are always (atleast trying) to look to the camera from all angles.</br>
 The material includes a lot of parameters to customize the look.</br></br>
-![image](https://github.com/user-attachments/assets/ca5d7ff4-063a-49a3-bebb-c8bc92162576)
+![image](Documentation~/image-shader-single-blade02.png)
 
 ## Performance
 With: Spacing = 0.1 | DrawDistance = 300 | Full Density Distance = 40 | Grass Subdivision = 2
