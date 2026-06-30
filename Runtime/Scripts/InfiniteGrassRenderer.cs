@@ -20,8 +20,6 @@ namespace InfiniteGrass
         private int _oldSubdivision = -1;
 
         private uint[] _argsArr;
-        private ComputeBuffer _args;
-        private ComputeBuffer _buffer;
 
         private void OnDestroy()
         {
@@ -42,8 +40,8 @@ namespace InfiniteGrass
 
             var cachedMesh = GetOrCreateMesh();
             
-            _args = new ComputeBuffer(1, 5 * sizeof(uint), ComputeBufferType.IndirectArguments);
-            _buffer = new ComputeBuffer(1, sizeof(uint), ComputeBufferType.Raw);
+            var args = new ComputeBuffer(1, 5 * sizeof(uint), ComputeBufferType.IndirectArguments);
+            var buffer = new ComputeBuffer(1, sizeof(uint), ComputeBufferType.Raw);
             
             _argsArr ??= new uint[5];
             _argsArr[0] = cachedMesh.GetIndexCount(0);
@@ -51,8 +49,10 @@ namespace InfiniteGrass
             _argsArr[2] = cachedMesh.GetIndexStart(0);
             _argsArr[3] = cachedMesh.GetBaseVertex(0);
             _argsArr[4] = 0;
-            _args.SetData(_argsArr);
-            InfiniteGrassUtility.Reserve(GetEntityId(), _buffer, _args, settings, cachedMesh, material);
+            
+            args.SetData(_argsArr);
+            
+            InfiniteGrassUtility.Reserve(GetEntityId(), buffer, args, settings, cachedMesh, material);
         }
         
         private Mesh GetOrCreateMesh()

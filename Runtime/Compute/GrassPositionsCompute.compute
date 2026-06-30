@@ -1,22 +1,27 @@
 #pragma kernel CSMainWithLod
 #pragma kernel CSMainWithoutLod
 
+// Per buffer properties
 float _Spacing;
 int _Offset;
+
+int2 _GridStartIndex;
+int2 _GridSize;
+
+float4 _RemapGreenChannel;
+float4 _RemapBlueChannel;
+
+AppendStructuredBuffer<float3> _GrassPositions;
+//----------
 
 float _DrawDistance;
 float _TextureUpdateThreshold;
 float _FullDensityDistance;
 
-int2 _GridStartIndex;
-int2 _GridSize;
 float3 _CameraPosition;
 float2 _CenterPos;
 float3 _BoundsMin;
 float3 _BoundsMax;
-
-float4 _RemapGreenChannel;
-float4 _RemapBlueChannel;
 
 float4x4 _VPMatrix;
 
@@ -26,8 +31,6 @@ SamplerState linearClampSampler;
 Texture2D _GrassHeightMapRT;
 Texture2D<float> _GrassMaskMapRT;
 //--------------------------------------------------
-
-AppendStructuredBuffer<float3> _GrassPositions;
 
 uint murmurHash3(int input) {
 	uint h = abs(input);

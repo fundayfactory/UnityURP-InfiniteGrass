@@ -1,0 +1,96 @@
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
+
+namespace InfiniteGrass
+{
+    public sealed class InfiniteGrassData : IDisposable
+    {
+        public readonly List<ComputeBuffer> PositionBuffers;
+        public readonly float QualityScale;
+        
+        private readonly int _textureSize;
+        
+        public RTHandle HeightRT;
+        public RTHandle HeightDepthRT;
+        public RTHandle MaskRT;
+        public RTHandle ColorRT;
+        public RTHandle SlopeRT;
+        
+        private bool _disposed;
+
+        public InfiniteGrassData(int textureSize, float qualityScale)
+        {
+            PositionBuffers = new List<ComputeBuffer>();
+            QualityScale = qualityScale;
+            
+            _textureSize = textureSize;
+        }
+
+        public void Update()
+        {
+            if (PositionBuffers.Count != InfiniteGrassUtility.Buffers.Count)
+            {
+                for (var i = 0; i < PositionBuffers.Count; i++)
+                {
+                    PositionBuffers[i]?.Release();
+                }
+
+                PositionBuffers.Clear();
+
+                for (var i = 0; i < InfiniteGrassUtility.Buffers.Count; i++)
+                {
+                    PositionBuffers.Add(new ComputeBuffer(1000 * InfiniteGrassUtility.Settings[i].maxBufferCount, sizeof(float) * 3, ComputeBufferType.Append));    
+                }
+            }
+            else
+            {
+                for (var i = 0; i < PositionBuffers.Count; i++)
+                {
+                    var maxCount = 1000 * InfiniteGrassUtility.Settings[i].maxBufferCount;
+                        
+                    if (PositionBuffers[i].count == maxCount)
+                        continue;
+                        
+                    PositionBuffers[i]?.Release();
+                    PositionBuffers[i] = new ComputeBuffer(maxCount, sizeof(float) * 3, ComputeBufferType.Append);    
+                }
+            }
+        }
+                
+        public void EnsureRTHandles()
+        {
+#pragma warning disable 0618
+            RenderingUtils.ReAllocateIfNeeded(ref HeightRT, new RenderTextureDescriptor(_textureSize, _textureSize, RenderTextureFormat.ARGBFloat, 0), FilterMode.Bilinear, name: "_GrassHeight");
+            RenderingUtils.ReAllocateIfNeeded(ref HeightDepthRT, new RenderTextureDescriptor(_textureSize, _textureSize, RenderTextureFormat.RFloat, 32), FilterMode.Bilinear, name: "_GrassHeightDepth");
+
+            var halfTextureSize = _textureSize / 2;
+            RenderingUtils.ReAllocateIfNeeded(ref MaskRT, new RenderTextureDescriptor(halfTextureSize, halfTextureSize, RenderTextureFormat.RFloat, 0), FilterMode.Bilinear, name: "_GrassMask");
+            RenderingUtils.ReAllocateIfNeeded(ref ColorRT, new RenderTextureDescriptor(halfTextureSize, halfTextureSize, RenderTextureFormat.ARGBFloat, 0), FilterMode.Bilinear, name: "_GrassColor");
+            RenderingUtils.ReAllocateIfNeeded(ref SlopeRT, new RenderTextureDescriptor(halfTextureSize, halfTextureSize, RenderTextureFormat.ARGBFloat, 0), FilterMode.Bilinear, name: "_GrassSlope");
+#pragma warning restore 0618
+        }
+
+        public void Dispose()
+        {
+            if (_disposed)
+                return;
+            _disposed = true;
+            
+            foreach (var buffer in PositionBuffers)
+            {
+                buffer?.Dispose();
+            }
+            
+            PositionBuffers.Clear();
+            
+            HeightRT?.Release();
+            HeightDepthRT?.Release();
+            MaskRT?.Release();
+            ColorRT?.Release();
+            SlopeRT?.Release();
+        }
+    }
+}
