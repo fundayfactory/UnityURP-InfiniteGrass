@@ -254,6 +254,7 @@
             float2 _GrassCenterPos;
             float _GrassDrawDistance;
             float _GrassTextureUpdateThreshold;
+            uint _GrassRenderingLayerMask;
             
             Varyings GrassDepthNormalsVert(Attributes input, uint instanceID : SV_InstanceID)
             {
@@ -315,7 +316,7 @@
                 outNormalWS = half4(normalWS, 0.0);
                 
             #ifdef _WRITE_RENDERING_LAYERS
-                outRenderingLayers = EncodeMeshRenderingLayer();
+                outRenderingLayers = _GrassRenderingLayerMask & _RenderingLayerMaxInt;
             #endif
             }
             
@@ -409,6 +410,7 @@
             float2 _GrassCenterPos;
             float _GrassDrawDistance;
             float _GrassTextureUpdateThreshold;
+            uint _GrassRenderingLayerMask;
 
             VaryingsCustom GBufferPassVertex(AttributesCustom input, uint instanceID : SV_InstanceID)
             {
@@ -521,7 +523,13 @@
                                                           inputData.bakedGI, surfaceData.occlusion, inputData.positionWS,
                                                           inputData.normalWS, inputData.viewDirectionWS, inputData.normalizedScreenSpaceUV);
 
-                return PackGBuffersBRDFData(brdfData, inputData, surfaceData.smoothness, surfaceData.emission + color, surfaceData.occlusion);
+                GBufferFragOutput output = PackGBuffersBRDFData(brdfData, inputData, surfaceData.smoothness, surfaceData.emission + color, surfaceData.occlusion);
+                
+            #if defined(_WRITE_RENDERING_LAYERS) || defined(_LIGHT_LAYERS)
+                output.meshRenderingLayers = _GrassRenderingLayerMask & _RenderingLayerMaxInt;
+            #endif
+
+                return output;
             }
                         
             ENDHLSL

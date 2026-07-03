@@ -125,6 +125,7 @@ namespace InfiniteGrass
                 var settings = InfiniteGrassUtility.Settings[i];
                 var posBuffer = data.PositionBuffers[i];
                 cmd.SetGlobalBuffer(ShaderPropertyId.GrassPositions, posBuffer);
+                cmd.SetGlobalInt(ShaderPropertyId.GrassRenderingLayerMask, settings.renderingLayerMask);
                 cmd.CopyCounterValue(posBuffer, InfiniteGrassUtility.ArgsBuffers[i], 4);
                     
                 if (settings.previewVisibleGrassCount)
@@ -153,6 +154,7 @@ namespace InfiniteGrass
             public static readonly int GrassPositions = Shader.PropertyToID("_GrassPositions");
             public static readonly int GrassSlopeRT = Shader.PropertyToID("_GrassSlopeRT");
             public static readonly int GrassColorRT = Shader.PropertyToID("_GrassColorRT");
+            public static readonly int GrassRenderingLayerMask = Shader.PropertyToID("_GrassRenderingLayerMask");
         }
     }
 }

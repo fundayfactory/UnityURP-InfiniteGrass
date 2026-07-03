@@ -21,8 +21,6 @@ namespace InfiniteGrass
         private readonly float _textureUpdateThreshold;
         private readonly bool _enableLodLevels;
         private readonly List<ShaderTagId> _shaderTagsList = new();
-        
-        private BufferHandle[] _positionBufferHandles;
             
         public InfiniteGrassDataPass(
             InfiniteGrassData infiniteGrassData,

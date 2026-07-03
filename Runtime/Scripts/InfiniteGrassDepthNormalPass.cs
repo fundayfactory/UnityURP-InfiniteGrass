@@ -8,6 +8,10 @@ namespace InfiniteGrass
 {
     internal sealed class InfiniteGrassDepthNormalPass : ScriptableRenderPass
     {
+        private static RenderTargetIdentifier[] _colorTargets;
+        private static readonly RenderBufferLoadAction[] _colorLoadActions = { RenderBufferLoadAction.Load, RenderBufferLoadAction.Load };
+        private static readonly RenderBufferStoreAction[] _colorStoreActions = { RenderBufferStoreAction.Store, RenderBufferStoreAction.Store };
+        
         private readonly InfiniteGrassData _infiniteGrassData;
             
         public InfiniteGrassDepthNormalPass(InfiniteGrassData infiniteGrassData)
@@ -40,6 +44,12 @@ namespace InfiniteGrass
             builder.UseTexture(passData.CameraNormalsTexture, AccessFlags.Write);
             builder.UseTexture(passData.CameraDepthTarget, AccessFlags.Write);
             
+            passData.RenderingLayersTexture = resourceData.renderingLayersTexture;
+            passData.HasRenderingLayersTexture = resourceData.renderingLayersTexture.IsValid();
+ 
+            if (passData.HasRenderingLayersTexture)
+                builder.UseTexture(passData.RenderingLayersTexture, AccessFlags.Write);
+            
             passData.PositionBuffers = _infiniteGrassData.PositionBuffers;
             
             for (var i = 0; i < passData.PositionBuffers.Count; i++)
@@ -65,13 +75,37 @@ namespace InfiniteGrass
             cmd.SetGlobalTexture(ShaderPropertyId.GrassColorRT, data.ColorTexture);
             cmd.SetGlobalTexture(ShaderPropertyId.GrassSlopeRT, data.SlopeTexture);
             
-            cmd.SetRenderTarget(data.CameraNormalsTexture, data.CameraDepthTarget);
+            if (data.HasRenderingLayersTexture)
+            {
+                _colorTargets ??= new RenderTargetIdentifier[2];
+                _colorTargets[0] = data.CameraNormalsTexture;
+                _colorTargets[1] = data.RenderingLayersTexture;
+ 
+                var binding = new RenderTargetBinding(
+                    _colorTargets,
+                    _colorLoadActions,
+                    _colorStoreActions,
+                    data.CameraDepthTarget,
+                    RenderBufferLoadAction.Load,
+                    RenderBufferStoreAction.Store
+                );
+ 
+                cmd.SetRenderTarget(binding);
+            }
+            else
+            {
+                cmd.SetRenderTarget(data.CameraNormalsTexture, data.CameraDepthTarget);
+            }
+            
+            if (data.HasRenderingLayersTexture)
+                cmd.EnableShaderKeyword("_WRITE_RENDERING_LAYERS");
 
             for (var i = 0; i < data.PositionBuffers.Count; i++)
             {
                 var settings = InfiniteGrassUtility.Settings[i];
                 var posBuffer = data.PositionBuffers[i];
                 cmd.SetGlobalBuffer(ShaderPropertyId.GrassPositions, posBuffer);
+                cmd.SetGlobalInt(ShaderPropertyId.GrassRenderingLayerMask, settings.renderingLayerMask);
                 cmd.CopyCounterValue(posBuffer, InfiniteGrassUtility.ArgsBuffers[i], 4);
                     
                 if (settings.previewVisibleGrassCount)
@@ -79,6 +113,9 @@ namespace InfiniteGrass
                     
                 cmd.DrawMeshInstancedIndirect(InfiniteGrassUtility.Meshes[i], 0, InfiniteGrassUtility.Materials[i], InfiniteGrassStaticConfig.DepthNormalPassIndex, InfiniteGrassUtility.ArgsBuffers[i], 0);
             }
+            
+            if (data.HasRenderingLayersTexture)
+                cmd.DisableShaderKeyword("_WRITE_RENDERING_LAYERS");
         }
 
         private sealed class PassData
@@ -88,6 +125,8 @@ namespace InfiniteGrass
                 
             public TextureHandle CameraNormalsTexture;
             public TextureHandle CameraDepthTarget;
+            public TextureHandle RenderingLayersTexture;
+            public bool HasRenderingLayersTexture;
 
             public List<GraphicsBuffer> PositionBuffers;
         }
@@ -97,6 +136,7 @@ namespace InfiniteGrass
             public static readonly int GrassPositions = Shader.PropertyToID("_GrassPositions");
             public static readonly int GrassSlopeRT = Shader.PropertyToID("_GrassSlopeRT");
             public static readonly int GrassColorRT = Shader.PropertyToID("_GrassColorRT");
+            public static readonly int GrassRenderingLayerMask = Shader.PropertyToID("_GrassRenderingLayerMask");
         }
     }
 }

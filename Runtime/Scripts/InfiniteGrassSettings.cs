@@ -19,6 +19,10 @@ namespace InfiniteGrass
         public RemapChannel greenChannel = new(1f, 1f, 1f, 1f);
         public RemapChannel blueChannel = new(0f, 0f, 1f, 1f);
         
+        [Header("Lighting")]
+        [Tooltip("Only relevant when Rendering Layers / Light Layers are enabled in the URP Asset.\nThis grass is drawn via DrawMeshInstancedIndirect, which bypasses Unity's normal per-Renderer rendering layer plumbing, so the mask must be supplied explicitly here.\nMust match the Rendering Layer Mask of the lights that should light this grass, or those lights will silently skip it in the deferred GBuffer pass.")]
+        public RenderingLayerMask renderingLayerMask = 1;
+        
         [Header("Debug"), Tooltip("Enabling this will make the performance drop a lot")]
         public bool previewVisibleGrassCount;
 
