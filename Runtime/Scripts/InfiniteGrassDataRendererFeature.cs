@@ -10,8 +10,6 @@ namespace InfiniteGrass
     {
         [Header("Pass"), SerializeField]
         private RenderPassEvent forwardPassEvent = RenderPassEvent.AfterRenderingOpaques;
-        [SerializeField, Tooltip("Enable this for the grass to correctly receive decals, affect SSAO etc.")]
-        private bool enableDepthNormalsPass = true;
         
         [Header("Compute"), SerializeField] 
         private ComputeShader computeShader;
@@ -42,6 +40,7 @@ namespace InfiniteGrass
         private InfiniteGrassData _infiniteGrassData;
         private InfiniteGrassDataPass _infiniteGrassDataPass;
         private InfiniteGrassDepthNormalPass _infiniteGrassDepthNormalPass;
+        private InfiniteGrassGBufferPass _infiniteGrassGBufferPass;
         private InfiniteGrassRenderPass _infiniteGrassRenderPass;
 
         public override void Create()
@@ -64,6 +63,11 @@ namespace InfiniteGrass
             _infiniteGrassDepthNormalPass = new InfiniteGrassDepthNormalPass(_infiniteGrassData)
             {
                 renderPassEvent = RenderPassEvent.BeforeRenderingPrePasses + 1
+            };
+            
+            _infiniteGrassGBufferPass = new InfiniteGrassGBufferPass(_infiniteGrassData)
+            {
+                renderPassEvent = RenderPassEvent.AfterRenderingGbuffer
             };
             
             _infiniteGrassRenderPass = new InfiniteGrassRenderPass(_infiniteGrassData)
@@ -89,8 +93,8 @@ namespace InfiniteGrass
                 return;
             
             renderer.EnqueuePass(_infiniteGrassDataPass);
-            if (enableDepthNormalsPass)
-                renderer.EnqueuePass(_infiniteGrassDepthNormalPass);
+            renderer.EnqueuePass(_infiniteGrassDepthNormalPass);
+            renderer.EnqueuePass(_infiniteGrassGBufferPass);
             renderer.EnqueuePass(_infiniteGrassRenderPass);
         }
 

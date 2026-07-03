@@ -6,11 +6,16 @@ using UnityEngine.Rendering.Universal;
 
 namespace InfiniteGrass
 {
-    internal sealed class InfiniteGrassDepthNormalPass : ScriptableRenderPass
+    internal sealed class InfiniteGrassGBufferPass : ScriptableRenderPass
     {
         private readonly InfiniteGrassData _infiniteGrassData;
+
+        private RenderBufferLoadAction[] _colorLoadActions;
+        private RenderBufferStoreAction[] _colorStoreActions;
+        
+        private static RenderTargetIdentifier[] _colorTargets;
             
-        public InfiniteGrassDepthNormalPass(InfiniteGrassData infiniteGrassData)
+        public InfiniteGrassGBufferPass(InfiniteGrassData infiniteGrassData)
         {
             _infiniteGrassData = infiniteGrassData;
         }
@@ -20,13 +25,13 @@ namespace InfiniteGrass
             var universalRenderingData = frameContext.Get<UniversalRenderingData>();
             if (universalRenderingData.renderingMode != RenderingMode.Deferred && universalRenderingData.renderingMode != RenderingMode.DeferredPlus)
                 return;
-                    
+            
             if (InfiniteGrassUtility.ArgsBuffers.Count == 0)
                 return;
             
             _infiniteGrassData.EnsureRTHandles();
             
-            using var builder = renderGraph.AddUnsafePass<PassData>("Grass Depth Normal Pass", out var passData);
+            using var builder = renderGraph.AddUnsafePass<PassData>("Grass GBuffer Pass", out var passData);
             passData.ColorTexture = renderGraph.ImportTexture(_infiniteGrassData.ColorRT);
             passData.SlopeTexture = renderGraph.ImportTexture(_infiniteGrassData.SlopeRT);
             
@@ -34,11 +39,39 @@ namespace InfiniteGrass
             builder.UseTexture(passData.SlopeTexture);
             
             var resourceData = frameContext.Get<UniversalResourceData>();
-            passData.CameraNormalsTexture = resourceData.cameraNormalsTexture;
+            var gBuffer = resourceData.gBuffer;
+            
+            if (gBuffer == null || gBuffer.Length == 0 || !gBuffer[0].IsValid())
+                return;
+
+            if (_colorLoadActions == null ||
+                _colorStoreActions == null ||
+                _colorLoadActions.Length != gBuffer.Length ||
+                _colorStoreActions.Length != gBuffer.Length)
+            {
+                _colorLoadActions = new RenderBufferLoadAction[gBuffer.Length];
+                _colorStoreActions = new RenderBufferStoreAction[gBuffer.Length];
+
+                for (var i = 0; i < gBuffer.Length; i++)
+                {
+                    _colorLoadActions[i] = RenderBufferLoadAction.Load;
+                    _colorStoreActions[i] = RenderBufferStoreAction.Store;
+                }
+            }
+                        
+            passData.GBuffer = gBuffer;
+            passData.ColorLoadActions = _colorLoadActions;
+            passData.ColorStoreActions = _colorStoreActions;
+            
+            for (var i = 0; i < gBuffer.Length; i++)
+            {
+                if (gBuffer[i].IsValid())
+                    builder.UseTexture(gBuffer[i], AccessFlags.ReadWrite);
+            }
+            
             passData.CameraDepthTarget = resourceData.activeDepthTexture;
             
-            builder.UseTexture(passData.CameraNormalsTexture, AccessFlags.Write);
-            builder.UseTexture(passData.CameraDepthTarget, AccessFlags.Write);
+            builder.UseTexture(passData.CameraDepthTarget, AccessFlags.ReadWrite);
             
             passData.PositionBuffers = _infiniteGrassData.PositionBuffers;
 
@@ -48,13 +81,33 @@ namespace InfiniteGrass
         
         private static void ExecutePass(PassData data, UnsafeGraphContext context)
         {
+            if (data.GBuffer == null || data.GBuffer.Length == 0)
+                return;
+            
             var cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
 
             cmd.SetGlobalTexture(ShaderPropertyId.GrassColorRT, data.ColorTexture);
             cmd.SetGlobalTexture(ShaderPropertyId.GrassSlopeRT, data.SlopeTexture);
-            
-            cmd.SetRenderTarget(data.CameraNormalsTexture, data.CameraDepthTarget);
 
+            if (_colorTargets == null || _colorTargets.Length != data.GBuffer.Length)
+                _colorTargets = new RenderTargetIdentifier[data.GBuffer.Length];
+            
+            for (var i = 0; i < data.GBuffer.Length; i++)
+            {
+                _colorTargets[i] = data.GBuffer[i];
+            }
+
+            var binding = new RenderTargetBinding(
+                _colorTargets,
+                data.ColorLoadActions,
+                data.ColorStoreActions,
+                data.CameraDepthTarget,
+                RenderBufferLoadAction.Load,
+                RenderBufferStoreAction.Store
+            );
+ 
+            cmd.SetRenderTarget(binding);
+            
             for (var i = 0; i < data.PositionBuffers.Count; i++)
             {
                 var settings = InfiniteGrassUtility.Settings[i];
@@ -65,7 +118,7 @@ namespace InfiniteGrass
                 if (settings.previewVisibleGrassCount)
                     cmd.CopyCounterValue(posBuffer, InfiniteGrassUtility.Buffers[i], 0);
                     
-                cmd.DrawMeshInstancedIndirect(InfiniteGrassUtility.Meshes[i], 0, InfiniteGrassUtility.Materials[i], InfiniteGrassStaticConfig.DepthNormalPassIndex, InfiniteGrassUtility.ArgsBuffers[i], 0);
+                cmd.DrawMeshInstancedIndirect(InfiniteGrassUtility.Meshes[i], 0, InfiniteGrassUtility.Materials[i], InfiniteGrassStaticConfig.GBufferPassIndex, InfiniteGrassUtility.ArgsBuffers[i], 0);
             }
         }
 
@@ -73,11 +126,14 @@ namespace InfiniteGrass
         {
             public TextureHandle ColorTexture;
             public TextureHandle SlopeTexture;
-                
-            public TextureHandle CameraNormalsTexture;
+            
+            public TextureHandle[] GBuffer;
             public TextureHandle CameraDepthTarget;
+            public RenderTargetIdentifier[] GBufferIdentifiers;
 
             public List<ComputeBuffer> PositionBuffers;
+            public RenderBufferLoadAction[] ColorLoadActions;
+            public RenderBufferStoreAction[] ColorStoreActions;
         }
 
         private static class ShaderPropertyId

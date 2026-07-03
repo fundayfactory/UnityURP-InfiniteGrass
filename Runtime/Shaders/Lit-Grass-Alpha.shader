@@ -32,7 +32,13 @@
 
     SubShader
     {
-        Tags { "RenderType"="Opaque" "RenderPipeline"="UniversalPipeline" "Queue"="Geometry" "IgnoreProjector"="True" }
+        Tags {
+            "RenderType"="Opaque"
+            "RenderPipeline"="UniversalPipeline"
+            "Queue"="Geometry"
+            "IgnoreProjector"="True"
+            "UniversalMaterialType" = "Lit"
+        }
 
         Pass
         {
@@ -44,7 +50,7 @@
             AlphaToMask On
             
             HLSLPROGRAM
-            #pragma vertex GrassDepthNormalsVert
+            #pragma vertex vert
             #pragma fragment frag
 
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
@@ -75,9 +81,7 @@
             {
                 float4 positionCS   : SV_POSITION;
                 half3 color         : COLOR;
-                half3 normal        : NORMAL;
                 float2 uv           : TEXCOORD0;
-                float4 positionData   : TEXCOORD1;
             };
 
             CBUFFER_START(UnityPerMaterial)
@@ -116,7 +120,7 @@
             float _GrassDrawDistance;
             float _GrassTextureUpdateThreshold;
 
-            Varyings GrassDepthNormalsVert(Attributes IN, uint instanceID : SV_InstanceID)
+            Varyings vert(Attributes IN, uint instanceID : SV_InstanceID)
             {
                 Varyings OUT;
                 float3 pivot = _GrassPositions[instanceID];
@@ -161,11 +165,18 @@
                 half3 albedo = lerp(_AOColor, baseColor, IN.positionOS.y);
                 float4 color = tex2Dlod(_GrassColorRT, float4(uv, 0, 0));
                 albedo = lerp(albedo, color.rgb, color.a);
+
+                // Lighting
+                half3 N = normalize(bladeDirection + cameraTransformForwardWS * -0.5 + _RandomNormal * half3(srandom(pivot.x * 314 + pivot.z * 10), 0, srandom(pivot.z * 677 + pivot.x * 10)));
+                // The normal vector is just the blade direction tilted a bit towards the camera with a bit of randomness
+                half3 V = normalize(_WorldSpaceCameraPos - positionWS);
+
+                float3 lighting = CalculateLighting(albedo, positionWS, N, V, color.a, IN.positionOS.y);
+                // I'm also passing the Alpha Channel of the Color Map cause I dont want the blades that are affected with color to receive specular light 
+                // The main use of the color map for me is burning the grass and the burned grass should not receive specular light
                 
-                OUT.positionData.xyz = positionWS;
-                OUT.positionData.w = IN.positionOS.y;
-                OUT.color = albedo;
-                OUT.normal = normalize(bladeDirection + cameraTransformForwardWS * -0.5 + _RandomNormal * half3(srandom(pivot.x * 314 + pivot.z * 10), 0, srandom(pivot.z * 677 + pivot.x * 10)));
+                float fogFactor = ComputeFogFactor(OUT.positionCS.z);
+                OUT.color.rgb = MixFog(lighting, fogFactor);
                 OUT.uv = IN.uv;
 
                 return OUT;
@@ -174,27 +185,13 @@
             half4 frag(Varyings IN) : SV_Target
             {
                 half4 color = tex2D(_MainTex, IN.uv);
-                color.rgb *= IN.color;
-                
                 clip(color.a - _AlphaCut0ff);
-                
-                ApplyDecalToBaseColor(IN.positionCS, color.rgb);
-                half3 normal = normalize(IN.normal);
-                half3 view = normalize(_WorldSpaceCameraPos - IN.positionData.xyz);
-                
-                float3 lighting = CalculateLighting(color.rgb, IN.positionData.xyz, normal, view, color.a, IN.positionData.w);
-                // I'm also passing the Alpha Channel of the Color Map cause I dont want the blades that are affected with color to receive specular light 
-                // The main use of the color map for me is burning the grass and the burned grass should not receive specular light
-                
-                float fogFactor = ComputeFogFactor(IN.positionCS.z);
-                
-                color.rgb = MixFog(lighting, fogFactor);
-
+                color.rgb *= IN.color.rgb;
                 return color;
             }
             ENDHLSL
         }
-
+        
         Pass
         {
             Name "DepthNormals"
@@ -207,6 +204,8 @@
             #pragma target 4.5
             #pragma vertex GrassDepthNormalsVert
             #pragma fragment GrassDepthNormalsFrag
+            
+            #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/RenderingLayers.hlsl"
             #pragma multi_compile_instancing
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
@@ -302,23 +301,229 @@
                 return output;
             }
             
-            void GrassDepthNormalsFrag(Varyings input, out half4 outNormalWS : SV_Target0)
+            void GrassDepthNormalsFrag(Varyings input
+                , out half4 outNormalWS : SV_Target0
+            #ifdef _WRITE_RENDERING_LAYERS
+                , out uint outRenderingLayers : SV_Target1
+            #endif
+                )
             {
                 half4 color = tex2D(_MainTex, input.uv);
                 clip(color.a - _AlphaCut0ff);
-
-                #if defined(_GBUFFER_NORMALS_OCT)
-                float3 normalWS = normalize(input.normalWS);
-                float2 octNormalWS = PackNormalOctQuadEncode(normalWS);           // values between [-1, +1], must use fp32 on some platforms.
-                float2 remappedOctNormalWS = saturate(octNormalWS * 0.5 + 0.5);   // values between [ 0,  1]
-                half3 packedNormalWS = PackFloat2To888(remappedOctNormalWS);      // values between [ 0,  1]
-                outNormalWS = half4(packedNormalWS, 0.0);
-                #else
+                
                 float3 normalWS = NormalizeNormalPerPixel(input.normalWS);
                 outNormalWS = half4(normalWS, 0.0);
-                #endif
+                
+            #ifdef _WRITE_RENDERING_LAYERS
+                outRenderingLayers = EncodeMeshRenderingLayer();
+            #endif
             }
             
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Name "GBuffer"
+            Tags { "LightMode" = "UniversalGBuffer" }
+            
+            ZWrite On
+            ZTest LEqual
+            Cull Back
+            
+            Stencil
+            {
+                Ref 33
+                ReadMask 0
+                WriteMask 96
+                Comp Always
+                Pass Replace
+            }
+
+            HLSLPROGRAM
+            #pragma target 4.5
+            #pragma exclude_renderers gles3 glcore
+            
+            #pragma vertex GBufferPassVertex
+            #pragma fragment GBufferPassFragment
+            
+            #pragma multi_compile_fragment _ _DBUFFER_MRT1 _DBUFFER_MRT2 _DBUFFER_MRT3
+            #pragma multi_compile_fragment _ _RENDER_PASS_ENABLED
+            #pragma multi_compile _ _LIGHT_LAYERS
+            #pragma multi_compile_instancing
+            #pragma instancing_options renderinglayer
+
+            #include "Packages/com.unity.render-pipelines.universal/Shaders/LitInput.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/Shaders/LitGBufferPass.hlsl"
+            #include "InfiniteGrassCommon.hlsl"
+            
+            struct AttributesCustom
+            {
+                float4 positionOS   : POSITION;
+                float2 texcoord     : TEXCOORD0;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+            };
+
+            struct VaryingsCustom
+            {
+                float4 positionCS   : SV_POSITION;
+                half3 normalWS      : NORMAL;
+                half3 color         : COLOR;
+                float2 uv           : TEXCOORD0;
+                float3 positionWS   : TEXCOORD1;
+                DECLARE_LIGHTMAP_OR_SH(staticLightmapUV, vertexSH, 7);
+            };
+            
+            CBUFFER_START(UnityPerMaterial)
+                float4 _MainTex_ST;
+            
+                half3 _ColorA;
+                half3 _ColorB;
+                float4 _BaseColorTexture_ST;
+                half3 _AOColor;
+            
+                float _GrassHeight;
+                float _GrassCurving;
+                float _GrassHeightRandomness;
+
+                float _ExpandDistantGrassWidth;
+                float2 _ExpandDistantGrassRange;
+
+                float4 _WindTexture_ST;
+                float _WindStrength;
+                float2 _WindScroll;
+
+                half _RandomNormal;
+                half _AlphaCut0ff;
+            
+                StructuredBuffer<float3> _GrassPositions;
+            CBUFFER_END
+            
+            sampler2D _MainTex;
+            sampler2D _BaseColorTexture;
+            sampler2D _WindTexture;
+
+            sampler2D _GrassColorRT;
+            sampler2D _GrassSlopeRT;
+            
+            float2 _GrassCenterPos;
+            float _GrassDrawDistance;
+            float _GrassTextureUpdateThreshold;
+
+            VaryingsCustom GBufferPassVertex(AttributesCustom input, uint instanceID : SV_InstanceID)
+            {
+                VaryingsCustom output = (VaryingsCustom)0;
+                
+                float3 pivot = _GrassPositions[instanceID];
+                
+                float2 uv = (pivot.xz - _GrassCenterPos) / (_GrassDrawDistance + _GrassTextureUpdateThreshold);
+                uv = uv * 0.5 + 0.5;
+                
+                // Grass Height
+                float grassHeight = _GrassHeight * (1 - random(pivot.x * 230 + pivot.z * 10) * _GrassHeightRandomness);
+
+                float4 slope = tex2Dlod(_GrassSlopeRT, float4(uv, 0, 0));
+                float xSlope = slope.r * 2 - 1;
+                float zSlope = slope.g * 2 - 1;
+
+                // Direction reconstructed from the slope texture
+                float3 slopeDirection = normalize(float3(xSlope, 1 - max(abs(xSlope), abs(zSlope)) * 0.5, zSlope));
+                // The original direction is upward
+                float3 bladeDirection = normalize(lerp(float3(0, 1, 0), slopeDirection, slope.a));
+
+                half3 windTex = tex2Dlod(_WindTexture, float4(TRANSFORM_TEX(pivot.xz, _WindTexture) + _WindScroll * _Time.y,0,0));
+                float2 wind = (windTex.rg * 2 - 1) * _WindStrength * (1-slope.a);
+
+                // Adding wind and multiplying with the Y position to affect the tip only
+                bladeDirection.xz += wind * input.positionOS.y;
+                bladeDirection = normalize(bladeDirection);
+                
+                float3 positionOS = bladeDirection * input.positionOS.y * grassHeight;
+                positionOS.xz += input.positionOS.xz + input.positionOS.y * input.positionOS.y * float2(srandom(pivot.x * 851 + pivot.z * 10), srandom(pivot.z * 647 + pivot.x * 10)) * _GrassCurving;
+                
+                // Adds a bit of curving to grass blade
+                // posOS -> posWS
+                float3 positionWS = positionOS + pivot;
+                // posWS -> posCS
+                output.positionCS = TransformWorldToHClip(positionWS);
+
+                float3 cameraTransformForwardWS = -UNITY_MATRIX_V[2].xyz;
+                half3 normal = normalize(bladeDirection + cameraTransformForwardWS * -0.5 + _RandomNormal * half3(srandom(pivot.x * 314 + pivot.z * 10), 0, srandom(pivot.z * 677 + pivot.x * 10)));
+
+                half3 baseColor = lerp(_ColorA, _ColorB, tex2Dlod(_BaseColorTexture, float4(TRANSFORM_TEX(pivot.xz, _BaseColorTexture),0,0)).r);
+                half3 albedo = lerp(_AOColor, baseColor, input.positionOS.y);
+                float4 color = tex2Dlod(_GrassColorRT, float4(uv, 0, 0));
+                albedo = lerp(albedo, color.rgb, color.a);
+                
+                output.color = albedo;
+                output.uv = input.texcoord;
+                output.normalWS = normal;
+                output.positionWS = positionWS;
+                
+                OUTPUT_SH4(positionWS, output.normalWS.xyz, GetWorldSpaceNormalizeViewDir(positionWS), output.vertexSH, output.probeOcclusion);
+
+                return output;
+            }
+            
+            void InitializeBakedGIDataCustom(VaryingsCustom input, inout InputData inputData)
+            {
+            #if defined(_SCREEN_SPACE_IRRADIANCE)
+                inputData.bakedGI = SAMPLE_GI(_ScreenSpaceIrradiance, input.positionCS.xy);
+            #elif defined(DYNAMICLIGHTMAP_ON)
+                inputData.bakedGI = SAMPLE_GI(input.staticLightmapUV, input.dynamicLightmapUV, input.vertexSH, inputData.normalWS);
+                inputData.shadowMask = SAMPLE_SHADOWMASK(input.staticLightmapUV);
+            #elif !defined(LIGHTMAP_ON) && (defined(PROBE_VOLUMES_L1) || defined(PROBE_VOLUMES_L2))
+                inputData.bakedGI = SAMPLE_GI(input.vertexSH,
+                    GetAbsolutePositionWS(inputData.positionWS),
+                    inputData.normalWS,
+                    inputData.viewDirectionWS,
+                    inputData.positionCS.xy,
+                    input.probeOcclusion,
+                    inputData.shadowMask);
+            #else
+                inputData.bakedGI = SAMPLE_GI(input.staticLightmapUV, input.vertexSH, inputData.normalWS);
+                inputData.shadowMask = SAMPLE_SHADOWMASK(input.staticLightmapUV);
+            #endif
+            }
+            
+            GBufferFragOutput GBufferPassFragment(VaryingsCustom input)
+            {
+                half4 albedo = tex2D(_MainTex, input.uv);
+                clip(albedo.a - _AlphaCut0ff);
+                
+                albedo.rgb *= input.color;
+
+                SurfaceData surfaceData = (SurfaceData)0;
+                surfaceData.albedo = albedo;
+                surfaceData.occlusion = 1;
+                surfaceData.alpha = albedo.a;
+
+                InputData inputData = (InputData)0;
+                inputData.positionWS = input.positionWS;
+                inputData.positionCS = input.positionCS;
+                inputData.normalWS = NormalizeNormalPerPixel(input.normalWS);
+                inputData.viewDirectionWS = GetWorldSpaceNormalizeViewDir(input.positionWS);
+                inputData.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(input.positionCS);
+
+                #if defined(_DBUFFER)
+                    ApplyDecalToSurfaceData(input.positionCS, surfaceData, inputData);
+                #endif
+                
+                InitializeBakedGIDataCustom(input, inputData);
+
+                BRDFData brdfData;
+                InitializeBRDFData(surfaceData.albedo, surfaceData.metallic, surfaceData.specular, surfaceData.smoothness, surfaceData.alpha, brdfData);
+                
+                Light mainLight = GetMainLight(inputData.shadowCoord, inputData.positionWS, inputData.shadowMask);
+                MixRealtimeAndBakedGI(mainLight, inputData.normalWS, inputData.bakedGI, inputData.shadowMask);
+
+                half3 color = GlobalIllumination(brdfData, (BRDFData)0, 0,
+                                                          inputData.bakedGI, surfaceData.occlusion, inputData.positionWS,
+                                                          inputData.normalWS, inputData.viewDirectionWS, inputData.normalizedScreenSpaceUV);
+
+                return PackGBuffersBRDFData(brdfData, inputData, surfaceData.smoothness, surfaceData.emission + color, surfaceData.occlusion);
+            }
+                        
             ENDHLSL
         }
     }

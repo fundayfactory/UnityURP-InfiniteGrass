@@ -19,6 +19,10 @@ namespace InfiniteGrass
         
         public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameContext)
         {
+            var universalRenderingData = frameContext.Get<UniversalRenderingData>();
+            if (universalRenderingData.renderingMode == RenderingMode.Deferred || universalRenderingData.renderingMode == RenderingMode.DeferredPlus)
+                return;
+            
             if (InfiniteGrassUtility.ArgsBuffers.Count == 0)
                 return;
             
@@ -81,7 +85,7 @@ namespace InfiniteGrass
                 if (settings.previewVisibleGrassCount)
                     cmd.CopyCounterValue(posBuffer, InfiniteGrassUtility.Buffers[i], 0);
                     
-                cmd.DrawMeshInstancedIndirect(InfiniteGrassUtility.Meshes[i], 0, InfiniteGrassUtility.Materials[i], 0, InfiniteGrassUtility.ArgsBuffers[i], 0, mpb);
+                cmd.DrawMeshInstancedIndirect(InfiniteGrassUtility.Meshes[i], 0, InfiniteGrassUtility.Materials[i], InfiniteGrassStaticConfig.ForwardPassIndex, InfiniteGrassUtility.ArgsBuffers[i], 0, mpb);
             }
         }
 
