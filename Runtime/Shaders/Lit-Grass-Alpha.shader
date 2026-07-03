@@ -109,12 +109,12 @@
                 StructuredBuffer<float3> _GrassPositions;
             CBUFFER_END
             
-            sampler2D _MainTex;
-            sampler2D _BaseColorTexture;
-            sampler2D _WindTexture;
+            TEXTURE2D(_MainTex);            SAMPLER(sampler_MainTex);
+            TEXTURE2D(_BaseColorTexture);   SAMPLER(sampler_BaseColorTexture);
+            TEXTURE2D(_WindTexture);        SAMPLER(sampler_WindTexture);
 
-            sampler2D _GrassColorRT;
-            sampler2D _GrassSlopeRT;
+            TEXTURE2D(_GrassColorRT);       SAMPLER(sampler_GrassColorRT);
+            TEXTURE2D(_GrassSlopeRT);       SAMPLER(sampler_GrassSlopeRT);
             
             float2 _GrassCenterPos;
             float _GrassDrawDistance;
@@ -134,7 +134,7 @@
                 // Billboard Logic
                 float3 cameraTransformForwardWS = -UNITY_MATRIX_V[2].xyz;
 
-                float4 slope = tex2Dlod(_GrassSlopeRT, float4(uv, 0, 0));
+                float4 slope = SAMPLE_TEXTURE2D_LOD(_GrassSlopeRT, sampler_GrassSlopeRT, float4(uv, 0, 0), 0);
                 float xSlope = slope.r * 2 - 1;
                 float zSlope = slope.g * 2 - 1;
 
@@ -143,7 +143,7 @@
                 // The original direction is upward
                 float3 bladeDirection = normalize(lerp(float3(0, 1, 0), slopeDirection, slope.a));
 
-                half3 windTex = tex2Dlod(_WindTexture, float4(TRANSFORM_TEX(pivot.xz, _WindTexture) + _WindScroll * _Time.y,0,0));
+                half3 windTex = SAMPLE_TEXTURE2D_LOD(_WindTexture, sampler_WindTexture, float4(TRANSFORM_TEX(pivot.xz, _WindTexture) + _WindScroll * _Time.y,0,0), 0);
                 float2 wind = (windTex.rg * 2 - 1) * _WindStrength * (1-slope.a);
 
                 // Adding wind and multiplying with the Y position to affect the tip only
@@ -161,9 +161,9 @@
                 OUT.positionCS = TransformWorldToHClip(positionWS);
                 
                 // Color
-                half3 baseColor = lerp(_ColorA, _ColorB, tex2Dlod(_BaseColorTexture, float4(TRANSFORM_TEX(pivot.xz, _BaseColorTexture),0,0)).r);
+                half3 baseColor = lerp(_ColorA, _ColorB, SAMPLE_TEXTURE2D_LOD(_BaseColorTexture, sampler_BaseColorTexture, float4(TRANSFORM_TEX(pivot.xz, _BaseColorTexture),0,0), 0).r);
                 half3 albedo = lerp(_AOColor, baseColor, IN.positionOS.y);
-                float4 color = tex2Dlod(_GrassColorRT, float4(uv, 0, 0));
+                float4 color = SAMPLE_TEXTURE2D_LOD(_GrassColorRT, sampler_GrassColorRT, float4(uv, 0, 0), 0);
                 albedo = lerp(albedo, color.rgb, color.a);
 
                 // Lighting
@@ -184,7 +184,7 @@
 
             half4 frag(Varyings IN) : SV_Target
             {
-                half4 color = tex2D(_MainTex, IN.uv);
+                half4 color = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv);
                 clip(color.a - _AlphaCut0ff);
                 color.rgb *= IN.color.rgb;
                 return color;
@@ -245,11 +245,11 @@
                 StructuredBuffer<float3> _GrassPositions;
             CBUFFER_END
             
-            sampler2D _MainTex;
-            sampler2D _WindTexture;
+            TEXTURE2D(_MainTex);            SAMPLER(sampler_MainTex);
+            TEXTURE2D(_WindTexture);        SAMPLER(sampler_WindTexture);
 
-            sampler2D _GrassColorRT;
-            sampler2D _GrassSlopeRT;
+            TEXTURE2D(_GrassColorRT);       SAMPLER(sampler_GrassColorRT);
+            TEXTURE2D(_GrassSlopeRT);       SAMPLER(sampler_GrassSlopeRT);
             
             float2 _GrassCenterPos;
             float _GrassDrawDistance;
@@ -267,7 +267,7 @@
                 // Grass Height
                 float grassHeight = _GrassHeight * (1 - random(pivot.x * 230 + pivot.z * 10) * _GrassHeightRandomness);
 
-                float4 slope = tex2Dlod(_GrassSlopeRT, float4(uv, 0, 0));
+                float4 slope = SAMPLE_TEXTURE2D_LOD(_GrassSlopeRT, sampler_GrassSlopeRT, float4(uv, 0, 0), 0);
                 float xSlope = slope.r * 2 - 1;
                 float zSlope = slope.g * 2 - 1;
 
@@ -276,7 +276,7 @@
                 // The original direction is upward
                 float3 bladeDirection = normalize(lerp(float3(0, 1, 0), slopeDirection, slope.a));
 
-                half3 windTex = tex2Dlod(_WindTexture, float4(TRANSFORM_TEX(pivot.xz, _WindTexture) + _WindScroll * _Time.y,0,0));
+                half3 windTex = SAMPLE_TEXTURE2D_LOD(_WindTexture, sampler_WindTexture, float4(TRANSFORM_TEX(pivot.xz, _WindTexture) + _WindScroll * _Time.y,0,0), 0);
                 float2 wind = (windTex.rg * 2 - 1) * _WindStrength * (1-slope.a);
 
                 // Adding wind and multiplying with the Y position to affect the tip only
@@ -308,7 +308,7 @@
             #endif
                 )
             {
-                half4 color = tex2D(_MainTex, input.uv);
+                half4 color = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv);
                 clip(color.a - _AlphaCut0ff);
                 
                 float3 normalWS = NormalizeNormalPerPixel(input.normalWS);
@@ -399,12 +399,12 @@
                 StructuredBuffer<float3> _GrassPositions;
             CBUFFER_END
             
-            sampler2D _MainTex;
-            sampler2D _BaseColorTexture;
-            sampler2D _WindTexture;
+            TEXTURE2D(_MainTex);            SAMPLER(sampler_MainTex);
+            TEXTURE2D(_BaseColorTexture);   SAMPLER(sampler_BaseColorTexture);
+            TEXTURE2D(_WindTexture);        SAMPLER(sampler_WindTexture);
 
-            sampler2D _GrassColorRT;
-            sampler2D _GrassSlopeRT;
+            TEXTURE2D(_GrassColorRT);       SAMPLER(sampler_GrassColorRT);
+            TEXTURE2D(_GrassSlopeRT);       SAMPLER(sampler_GrassSlopeRT);
             
             float2 _GrassCenterPos;
             float _GrassDrawDistance;
@@ -422,7 +422,7 @@
                 // Grass Height
                 float grassHeight = _GrassHeight * (1 - random(pivot.x * 230 + pivot.z * 10) * _GrassHeightRandomness);
 
-                float4 slope = tex2Dlod(_GrassSlopeRT, float4(uv, 0, 0));
+                float4 slope = SAMPLE_TEXTURE2D_LOD(_GrassSlopeRT, sampler_GrassSlopeRT, float4(uv, 0, 0), 0);
                 float xSlope = slope.r * 2 - 1;
                 float zSlope = slope.g * 2 - 1;
 
@@ -431,7 +431,7 @@
                 // The original direction is upward
                 float3 bladeDirection = normalize(lerp(float3(0, 1, 0), slopeDirection, slope.a));
 
-                half3 windTex = tex2Dlod(_WindTexture, float4(TRANSFORM_TEX(pivot.xz, _WindTexture) + _WindScroll * _Time.y,0,0));
+                half3 windTex = SAMPLE_TEXTURE2D_LOD(_WindTexture, sampler_WindTexture, float4(TRANSFORM_TEX(pivot.xz, _WindTexture) + _WindScroll * _Time.y,0,0), 0);
                 float2 wind = (windTex.rg * 2 - 1) * _WindStrength * (1-slope.a);
 
                 // Adding wind and multiplying with the Y position to affect the tip only
@@ -450,9 +450,9 @@
                 float3 cameraTransformForwardWS = -UNITY_MATRIX_V[2].xyz;
                 half3 normal = normalize(bladeDirection + cameraTransformForwardWS * -0.5 + _RandomNormal * half3(srandom(pivot.x * 314 + pivot.z * 10), 0, srandom(pivot.z * 677 + pivot.x * 10)));
 
-                half3 baseColor = lerp(_ColorA, _ColorB, tex2Dlod(_BaseColorTexture, float4(TRANSFORM_TEX(pivot.xz, _BaseColorTexture),0,0)).r);
+                half3 baseColor = lerp(_ColorA, _ColorB, SAMPLE_TEXTURE2D_LOD(_BaseColorTexture, sampler_BaseColorTexture, float4(TRANSFORM_TEX(pivot.xz, _BaseColorTexture),0,0), 0).r);
                 half3 albedo = lerp(_AOColor, baseColor, input.positionOS.y);
-                float4 color = tex2Dlod(_GrassColorRT, float4(uv, 0, 0));
+                float4 color = SAMPLE_TEXTURE2D_LOD(_GrassColorRT, sampler_GrassColorRT, float4(uv, 0, 0), 0);
                 albedo = lerp(albedo, color.rgb, color.a);
                 
                 output.color = albedo;
@@ -488,7 +488,7 @@
             
             GBufferFragOutput GBufferPassFragment(VaryingsCustom input)
             {
-                half4 albedo = tex2D(_MainTex, input.uv);
+                half4 albedo = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv);
                 clip(albedo.a - _AlphaCut0ff);
                 
                 albedo.rgb *= input.color;
