@@ -6,8 +6,8 @@ namespace InfiniteGrass
     public static class InfiniteGrassUtility
     {
         internal static readonly List<EntityId> EntityIds = new();
-        internal static readonly List<ComputeBuffer> Buffers = new();
-        internal static readonly List<ComputeBuffer> ArgsBuffers = new();
+        internal static readonly List<GraphicsBuffer> Buffers = new();
+        internal static readonly List<GraphicsBuffer> ArgsBuffers = new();
         internal static readonly List<InfiniteGrassSettings> Settings = new();
         internal static readonly List<Mesh> Meshes = new();
         internal static readonly List<Material> Materials = new();
@@ -125,7 +125,7 @@ namespace InfiniteGrass
             Materials.Clear();
         }
 
-        public static void Reserve(EntityId entityId, ComputeBuffer buffer, ComputeBuffer args, InfiniteGrassSettings settings, Mesh mesh, Material material)
+        public static void Reserve(EntityId entityId, GraphicsBuffer buffer, GraphicsBuffer args, InfiniteGrassSettings settings, Mesh mesh, Material material)
         {
             EntityIds.Add(entityId);
             Buffers.Add(buffer);

@@ -40,8 +40,8 @@ namespace InfiniteGrass
 
             var cachedMesh = GetOrCreateMesh();
             
-            var args = new ComputeBuffer(1, 5 * sizeof(uint), ComputeBufferType.IndirectArguments);
-            var buffer = new ComputeBuffer(1, sizeof(uint), ComputeBufferType.Raw);
+            var args = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, 1, 5 * sizeof(uint));
+            var buffer = new GraphicsBuffer(GraphicsBuffer.Target.Raw, 1, sizeof(uint));
             
             _argsArr ??= new uint[5];
             _argsArr[0] = cachedMesh.GetIndexCount(0);

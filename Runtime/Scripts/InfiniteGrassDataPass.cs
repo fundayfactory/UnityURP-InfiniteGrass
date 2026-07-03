@@ -21,6 +21,8 @@ namespace InfiniteGrass
         private readonly float _textureUpdateThreshold;
         private readonly bool _enableLodLevels;
         private readonly List<ShaderTagId> _shaderTagsList = new();
+        
+        private BufferHandle[] _positionBufferHandles;
             
         public InfiniteGrassDataPass(
             InfiniteGrassData infiniteGrassData,
@@ -139,6 +141,12 @@ namespace InfiniteGrass
             passData.PositionBuffers = _infiniteGrassData.PositionBuffers;
             passData.QualityScale = _infiniteGrassData.QualityScale;
             passData.EnableLodLevels = _enableLodLevels;
+            
+            for (var i = 0; i < passData.PositionBuffers.Count; i++)
+            {
+                var posBufferHandle = renderGraph.ImportBuffer(passData.PositionBuffers[i]);
+                builder.UseBuffer(posBufferHandle, AccessFlags.Write);
+            }
 
             builder.AllowPassCulling(false);
             builder.SetRenderFunc(static (PassData data, UnsafeGraphContext context) => ExecutePass(data, context));
@@ -267,7 +275,7 @@ namespace InfiniteGrass
             public float QualityScale;
             public bool EnableLodLevels;
 
-            public List<ComputeBuffer> PositionBuffers;
+            public List<GraphicsBuffer> PositionBuffers;
         }
 
         private static class ShaderPropertyId

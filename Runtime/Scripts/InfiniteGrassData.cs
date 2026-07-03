@@ -8,7 +8,7 @@ namespace InfiniteGrass
 {
     public sealed class InfiniteGrassData : IDisposable
     {
-        public readonly List<ComputeBuffer> PositionBuffers;
+        public readonly List<GraphicsBuffer> PositionBuffers;
         public readonly float QualityScale;
         
         private readonly int _textureSize;
@@ -23,7 +23,7 @@ namespace InfiniteGrass
 
         public InfiniteGrassData(int textureSize, float qualityScale)
         {
-            PositionBuffers = new List<ComputeBuffer>();
+            PositionBuffers = new List<GraphicsBuffer>();
             QualityScale = qualityScale;
             
             _textureSize = textureSize;
@@ -42,7 +42,7 @@ namespace InfiniteGrass
 
                 for (var i = 0; i < InfiniteGrassUtility.Buffers.Count; i++)
                 {
-                    PositionBuffers.Add(new ComputeBuffer(1000 * InfiniteGrassUtility.Settings[i].maxBufferCount, sizeof(float) * 3, ComputeBufferType.Append));    
+                    PositionBuffers.Add(new GraphicsBuffer(GraphicsBuffer.Target.Structured | GraphicsBuffer.Target.Append, 1000 * InfiniteGrassUtility.Settings[i].maxBufferCount, sizeof(float) * 3));    
                 }
             }
             else
@@ -55,7 +55,7 @@ namespace InfiniteGrass
                         continue;
                         
                     PositionBuffers[i]?.Release();
-                    PositionBuffers[i] = new ComputeBuffer(maxCount, sizeof(float) * 3, ComputeBufferType.Append);    
+                    PositionBuffers[i] = new GraphicsBuffer(GraphicsBuffer.Target.Structured | GraphicsBuffer.Target.Append, maxCount, sizeof(float) * 3);    
                 }
             }
         }

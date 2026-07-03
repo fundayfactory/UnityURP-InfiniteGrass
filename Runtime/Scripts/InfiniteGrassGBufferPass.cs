@@ -74,6 +74,18 @@ namespace InfiniteGrass
             builder.UseTexture(passData.CameraDepthTarget, AccessFlags.ReadWrite);
             
             passData.PositionBuffers = _infiniteGrassData.PositionBuffers;
+            
+            for (var i = 0; i < passData.PositionBuffers.Count; i++)
+            {
+                var posBufferHandle = renderGraph.ImportBuffer(passData.PositionBuffers[i]);
+                builder.UseBuffer(posBufferHandle, AccessFlags.Read);
+            }
+
+            for (var i = 0; i < InfiniteGrassUtility.ArgsBuffers.Count; i++)
+            {
+                var argsBufferHandle = renderGraph.ImportBuffer(InfiniteGrassUtility.ArgsBuffers[i]);
+                builder.UseBuffer(argsBufferHandle, AccessFlags.ReadWrite);
+            }
 
             builder.AllowPassCulling(false);
             builder.SetRenderFunc(static (PassData data, UnsafeGraphContext context) => ExecutePass(data, context));
@@ -131,7 +143,7 @@ namespace InfiniteGrass
             public TextureHandle CameraDepthTarget;
             public RenderTargetIdentifier[] GBufferIdentifiers;
 
-            public List<ComputeBuffer> PositionBuffers;
+            public List<GraphicsBuffer> PositionBuffers;
             public RenderBufferLoadAction[] ColorLoadActions;
             public RenderBufferStoreAction[] ColorStoreActions;
         }
