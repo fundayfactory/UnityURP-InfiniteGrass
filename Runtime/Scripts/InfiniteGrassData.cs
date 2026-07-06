@@ -63,13 +63,13 @@ namespace InfiniteGrass
         public void EnsureRTHandles()
         {
 #pragma warning disable 0618
-            RenderingUtils.ReAllocateIfNeeded(ref HeightRT, new RenderTextureDescriptor(_textureSize, _textureSize, RenderTextureFormat.ARGBFloat, 0), FilterMode.Bilinear, name: "_GrassHeight");
-            RenderingUtils.ReAllocateIfNeeded(ref HeightDepthRT, new RenderTextureDescriptor(_textureSize, _textureSize, RenderTextureFormat.RFloat, 32), FilterMode.Bilinear, name: "_GrassHeightDepth");
-
+            RenderingUtils.ReAllocateIfNeeded(ref HeightRT, new RenderTextureDescriptor(_textureSize, _textureSize, RenderTextureFormat.ARGBHalf, 0), FilterMode.Bilinear, name: "_GrassHeight");
+            RenderingUtils.ReAllocateIfNeeded(ref HeightDepthRT, new RenderTextureDescriptor(_textureSize, _textureSize, RenderTextureFormat.RHalf, 16), FilterMode.Bilinear, name: "_GrassHeightDepth");
+ 
             var halfTextureSize = _textureSize / 2;
-            RenderingUtils.ReAllocateIfNeeded(ref MaskRT, new RenderTextureDescriptor(halfTextureSize, halfTextureSize, RenderTextureFormat.RFloat, 0), FilterMode.Bilinear, name: "_GrassMask");
-            RenderingUtils.ReAllocateIfNeeded(ref ColorRT, new RenderTextureDescriptor(halfTextureSize, halfTextureSize, RenderTextureFormat.ARGBFloat, 0), FilterMode.Bilinear, name: "_GrassColor");
-            RenderingUtils.ReAllocateIfNeeded(ref SlopeRT, new RenderTextureDescriptor(halfTextureSize, halfTextureSize, RenderTextureFormat.ARGBFloat, 0), FilterMode.Bilinear, name: "_GrassSlope");
+            RenderingUtils.ReAllocateIfNeeded(ref MaskRT, new RenderTextureDescriptor(halfTextureSize, halfTextureSize, RenderTextureFormat.RHalf, 0), FilterMode.Bilinear, name: "_GrassMask");
+            RenderingUtils.ReAllocateIfNeeded(ref ColorRT, new RenderTextureDescriptor(halfTextureSize, halfTextureSize, RenderTextureFormat.ARGBHalf, 0), FilterMode.Bilinear, name: "_GrassColor");
+            RenderingUtils.ReAllocateIfNeeded(ref SlopeRT, new RenderTextureDescriptor(halfTextureSize, halfTextureSize, RenderTextureFormat.ARGBHalf, 0), FilterMode.Bilinear, name: "_GrassSlope");
 #pragma warning restore 0618
         }
 
