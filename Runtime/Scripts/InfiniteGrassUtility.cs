@@ -6,7 +6,6 @@ namespace InfiniteGrass
     public static class InfiniteGrassUtility
     {
         internal static readonly List<EntityId> EntityIds = new();
-        internal static readonly List<GraphicsBuffer> Buffers = new();
         internal static readonly List<GraphicsBuffer> ArgsBuffers = new();
         internal static readonly List<InfiniteGrassSettings> Settings = new();
         internal static readonly List<Mesh> Meshes = new();
@@ -97,12 +96,10 @@ namespace InfiniteGrass
 
             if (index == -1)
                 return;
-            
-            Buffers[index]?.Release();
+
             ArgsBuffers[index]?.Release();
 
             EntityIds.RemoveAt(index);
-            Buffers.RemoveAt(index);
             ArgsBuffers.RemoveAt(index);
             Settings.RemoveAt(index);
             Meshes.RemoveAt(index);
@@ -113,22 +110,19 @@ namespace InfiniteGrass
         {
             for (var i = 0; i < EntityIds.Count; i++)
             {
-                Buffers[i]?.Release();
                 ArgsBuffers[i]?.Release();
             }
             
             EntityIds.Clear();
-            Buffers.Clear();
             ArgsBuffers.Clear();
             Settings.Clear();
             Meshes.Clear();
             Materials.Clear();
         }
 
-        public static void Reserve(EntityId entityId, GraphicsBuffer buffer, GraphicsBuffer args, InfiniteGrassSettings settings, Mesh mesh, Material material)
+        public static void Reserve(EntityId entityId, GraphicsBuffer args, InfiniteGrassSettings settings, Mesh mesh, Material material)
         {
             EntityIds.Add(entityId);
-            Buffers.Add(buffer);
             ArgsBuffers.Add(args);
             Settings.Add(settings);
             Meshes.Add(mesh);

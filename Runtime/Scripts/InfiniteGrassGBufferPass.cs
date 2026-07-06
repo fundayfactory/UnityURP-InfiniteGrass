@@ -128,9 +128,6 @@ namespace InfiniteGrass
                 cmd.SetGlobalInt(ShaderPropertyId.GrassRenderingLayerMask, settings.renderingLayerMask);
                 cmd.CopyCounterValue(posBuffer, InfiniteGrassUtility.ArgsBuffers[i], 4);
                     
-                if (settings.previewVisibleGrassCount)
-                    cmd.CopyCounterValue(posBuffer, InfiniteGrassUtility.Buffers[i], 0);
-                    
                 cmd.DrawMeshInstancedIndirect(InfiniteGrassUtility.Meshes[i], 0, InfiniteGrassUtility.Materials[i], InfiniteGrassStaticConfig.GBufferPassIndex, InfiniteGrassUtility.ArgsBuffers[i], 0);
             }
         }
@@ -142,7 +139,6 @@ namespace InfiniteGrass
             
             public TextureHandle[] GBuffer;
             public TextureHandle CameraDepthTarget;
-            public RenderTargetIdentifier[] GBufferIdentifiers;
 
             public List<GraphicsBuffer> PositionBuffers;
             public RenderBufferLoadAction[] ColorLoadActions;

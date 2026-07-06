@@ -108,9 +108,6 @@ namespace InfiniteGrass
                 cmd.SetGlobalInt(ShaderPropertyId.GrassRenderingLayerMask, settings.renderingLayerMask);
                 cmd.CopyCounterValue(posBuffer, InfiniteGrassUtility.ArgsBuffers[i], 4);
                     
-                if (settings.previewVisibleGrassCount)
-                    cmd.CopyCounterValue(posBuffer, InfiniteGrassUtility.Buffers[i], 0);
-                    
                 cmd.DrawMeshInstancedIndirect(InfiniteGrassUtility.Meshes[i], 0, InfiniteGrassUtility.Materials[i], InfiniteGrassStaticConfig.DepthNormalPassIndex, InfiniteGrassUtility.ArgsBuffers[i], 0);
             }
             

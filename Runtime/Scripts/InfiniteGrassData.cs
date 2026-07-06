@@ -31,7 +31,7 @@ namespace InfiniteGrass
 
         public void Update()
         {
-            if (PositionBuffers.Count != InfiniteGrassUtility.Buffers.Count)
+            if (PositionBuffers.Count != InfiniteGrassUtility.ArgsBuffers.Count)
             {
                 for (var i = 0; i < PositionBuffers.Count; i++)
                 {
@@ -40,7 +40,7 @@ namespace InfiniteGrass
 
                 PositionBuffers.Clear();
 
-                for (var i = 0; i < InfiniteGrassUtility.Buffers.Count; i++)
+                for (var i = 0; i < InfiniteGrassUtility.ArgsBuffers.Count; i++)
                 {
                     PositionBuffers.Add(new GraphicsBuffer(GraphicsBuffer.Target.Structured | GraphicsBuffer.Target.Append, 1000 * InfiniteGrassUtility.Settings[i].maxBufferCount, sizeof(float) * 3));    
                 }

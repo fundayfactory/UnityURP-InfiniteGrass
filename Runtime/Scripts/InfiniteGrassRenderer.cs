@@ -20,10 +20,16 @@ namespace InfiniteGrass
         private int _oldSubdivision = -1;
 
         private uint[] _argsArr;
+        private int _cachedMaxBufferCount;
 
         private void OnDestroy()
         {
             InfiniteGrassUtility.Release(GetEntityId());
+        }
+
+        private void OnEnable()
+        {
+            AllocateBuffer();
         }
 
         private void OnDisable()
@@ -33,15 +39,20 @@ namespace InfiniteGrass
 
         private void LateUpdate()
         {
-            InfiniteGrassUtility.Release(GetEntityId());
+            if (_cachedMaxBufferCount == 0 || _cachedMaxBufferCount != settings.maxBufferCount)
+                AllocateBuffer();
+        }
 
+        private void AllocateBuffer()
+        {
             if (material == null) 
                 return;
+            
+            InfiniteGrassUtility.Release(GetEntityId());
 
             var cachedMesh = GetOrCreateMesh();
             
             var args = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, 1, 5 * sizeof(uint));
-            var buffer = new GraphicsBuffer(GraphicsBuffer.Target.Raw, 1, sizeof(uint));
             
             _argsArr ??= new uint[5];
             _argsArr[0] = cachedMesh.GetIndexCount(0);
@@ -50,9 +61,11 @@ namespace InfiniteGrass
             _argsArr[3] = cachedMesh.GetBaseVertex(0);
             _argsArr[4] = 0;
             
+            _cachedMaxBufferCount = settings.maxBufferCount;
+            
             args.SetData(_argsArr);
             
-            InfiniteGrassUtility.Reserve(GetEntityId(), buffer, args, settings, cachedMesh, material);
+            InfiniteGrassUtility.Reserve(GetEntityId(), args, settings, cachedMesh, material);
         }
         
         private Mesh GetOrCreateMesh()

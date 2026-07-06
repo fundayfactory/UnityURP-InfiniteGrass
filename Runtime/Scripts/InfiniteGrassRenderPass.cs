@@ -89,13 +89,9 @@ namespace InfiniteGrass
             // --- Draw ---
             for (var i = 0; i < data.PositionBuffers.Count; i++)
             {
-                var settings = InfiniteGrassUtility.Settings[i];
                 var posBuffer = data.PositionBuffers[i];
                 cmd.SetGlobalBuffer(ShaderPropertyId.GrassPositions, posBuffer);
                 cmd.CopyCounterValue(posBuffer, InfiniteGrassUtility.ArgsBuffers[i], 4);
-                    
-                if (settings.previewVisibleGrassCount)
-                    cmd.CopyCounterValue(posBuffer, InfiniteGrassUtility.Buffers[i], 0);
                     
                 cmd.DrawMeshInstancedIndirect(InfiniteGrassUtility.Meshes[i], 0, InfiniteGrassUtility.Materials[i], InfiniteGrassStaticConfig.ForwardPassIndex, InfiniteGrassUtility.ArgsBuffers[i], 0, mpb);
             }

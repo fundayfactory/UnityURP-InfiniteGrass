@@ -29,9 +29,9 @@ namespace InfiniteGrass
                 _stringBuilder.Append(": ");
                 
                 // Reading back data from GPU
-                var count = new uint[1];
-                InfiniteGrassUtility.Buffers[i].GetData(count);
-                _stringBuilder.AppendFormat("{0}", count[0]);
+                var count = new uint[5];
+                InfiniteGrassUtility.ArgsBuffers[i].GetData(count);
+                _stringBuilder.AppendFormat("{0}", count[1]);
                 
                 GUI.Label(new Rect(64, 64 + 32 * added, 400, 32), _stringBuilder.ToString(), _style);
             }
