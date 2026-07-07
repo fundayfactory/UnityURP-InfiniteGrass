@@ -80,8 +80,8 @@
             struct Varyings
             {
                 float4 positionCS   : SV_POSITION;
-                half3 color         : COLOR;
-                float2 uv           : TEXCOORD0;
+                half3 color         : TEXCOORD0;
+                float2 uv           : TEXCOORD1;
             };
 
             CBUFFER_START(UnityPerMaterial)
@@ -369,9 +369,9 @@
             {
                 float4 positionCS   : SV_POSITION;
                 half3 normalWS      : NORMAL;
-                half3 color         : COLOR;
-                float2 uv           : TEXCOORD0;
-                float3 positionWS   : TEXCOORD1;
+                half3 color         : TEXCOORD0;
+                float2 uv           : TEXCOORD1;
+                float3 positionWS   : TEXCOORD2;
                 DECLARE_LIGHTMAP_OR_SH(staticLightmapUV, vertexSH, 7);
             };
             

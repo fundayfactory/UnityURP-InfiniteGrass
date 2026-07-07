@@ -75,7 +75,7 @@
             struct Varyings
             {
                 float4 positionCS  : SV_POSITION;
-                half3 color        : COLOR;
+                half3 color        : TEXCOORD0;
             };
 
             CBUFFER_START(UnityPerMaterial)
