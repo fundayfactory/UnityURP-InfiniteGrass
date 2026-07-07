@@ -99,9 +99,9 @@ namespace InfiniteGrass
             passData.ColorTexture = renderGraph.ImportTexture(_infiniteGrassData.ColorRT);
             passData.SlopeTexture = renderGraph.ImportTexture(_infiniteGrassData.SlopeRT);
 
-            builder.UseTexture(passData.HeightTexture, AccessFlags.Write);
-            builder.UseTexture(passData.HeightDepthTexture, AccessFlags.Write);
-            builder.UseTexture(passData.MaskTexture, AccessFlags.Write);
+            builder.UseTexture(passData.HeightTexture, AccessFlags.ReadWrite);
+            builder.UseTexture(passData.HeightDepthTexture, AccessFlags.ReadWrite);
+            builder.UseTexture(passData.MaskTexture, AccessFlags.ReadWrite);
             builder.UseTexture(passData.ColorTexture, AccessFlags.Write);
             builder.UseTexture(passData.SlopeTexture, AccessFlags.Write);
                 
