@@ -12,6 +12,10 @@ namespace InfiniteGrass
         private Mesh mesh;
         [SerializeField, Min(1)]
         private int grassMeshSubdivision = 5;
+        [SerializeField]
+        private bool useQuadMesh = true;
+        [SerializeField]
+        private float height = 1f;
         
         [Header("Settings")]
         public InfiniteGrassSettings settings;
@@ -74,12 +78,74 @@ namespace InfiniteGrass
                 return mesh;
             if (_generatedMesh != null && _oldSubdivision == grassMeshSubdivision)
                 return _generatedMesh;
-        
+
+            if (useQuadMesh)
+            {
+                var aspect = 1f;
+                if (material != null && material.mainTexture != null)
+                    aspect = material.mainTexture.width / (float)material.mainTexture.height;
+                GenerateQuadMesh(height * aspect, height);
+            }
+            else
+            {
+                GenerateBladeMesh();
+            }
+
+            return _generatedMesh;
+        }
+
+        private void GenerateQuadMesh(float width, float height)
+        {
+            _generatedMesh = new Mesh();
+            
+            var halfWidth = width * 0.5f;
+
+            Vector3[] vertices = new Vector3[4]
+            {
+                new Vector3(-halfWidth, 0, 0),
+                new Vector3(-halfWidth, height, 0),
+                new Vector3( halfWidth, 0, 0),
+                new Vector3( halfWidth, height, 0)
+            };
+
+            int[] triangles = new int[6]
+            {
+                0, 1, 2,
+                2, 1, 3
+            };
+
+            Vector3[] normals = new Vector3[4]
+            {
+                -Vector3.forward,
+                -Vector3.forward,
+                -Vector3.forward,
+                -Vector3.forward
+            };
+
+            Vector2[] uv = new Vector2[4]
+            {
+                new Vector2(0, 0),
+                new Vector2(0, 1),
+                new Vector2(1, 0),
+                new Vector2(1, 1)
+            };
+
+            _generatedMesh.vertices = vertices;
+            _generatedMesh.triangles = triangles;
+            _generatedMesh.normals = normals;
+            _generatedMesh.uv = uv;
+
+            _generatedMesh.RecalculateBounds();
+        }
+
+        private void GenerateBladeMesh()
+        {
             _generatedMesh = new Mesh();
 
             var vertices = new Vector3[3 + 4 * grassMeshSubdivision];
             var normals = new Vector3[vertices.Length];
             var triangles = new int[(1 + 2 * grassMeshSubdivision) * 3];
+            var uvs = new Vector2[vertices.Length];
 
             for (var i = 0; i < grassMeshSubdivision; i++)
             {
@@ -108,6 +174,11 @@ namespace InfiniteGrass
                 triangles[i * 6 + 3] = bottomLeftIndex;
                 triangles[i * 6 + 4] = topLeftIndex;
                 triangles[i * 6 + 5] = topRightIndex;
+                
+                uvs[bottomLeftIndex] = bottomLeft;
+                uvs[bottomRightIndex] = bottomRight;
+                uvs[topLeftIndex] = topLeft;
+                uvs[topRightIndex] = topRight;
             }
 
             for (var i = 0; i < normals.Length; i++)
@@ -123,12 +194,16 @@ namespace InfiniteGrass
             triangles[grassMeshSubdivision * 6 + 1] = grassMeshSubdivision * 4 + 1;
             triangles[grassMeshSubdivision * 6 + 2] = grassMeshSubdivision * 4 + 2;
 
+            uvs[grassMeshSubdivision * 4] = new Vector3(-0.25f, (float)grassMeshSubdivision / (grassMeshSubdivision + 1));
+            uvs[grassMeshSubdivision * 4 + 1] = new Vector3(0, 1);
+            uvs[grassMeshSubdivision * 4 + 2] = new Vector3(0.25f, (float)grassMeshSubdivision / (grassMeshSubdivision + 1));
+
             _generatedMesh.SetVertices(vertices);
             _generatedMesh.SetNormals(normals);
             _generatedMesh.SetTriangles(triangles, 0);
+            _generatedMesh.SetUVs(0, uvs);
 
             _oldSubdivision = grassMeshSubdivision;
-            return _generatedMesh;
         }
     }
 }

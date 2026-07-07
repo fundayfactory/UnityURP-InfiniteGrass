@@ -166,6 +166,14 @@ void CSMainWithoutLod(uint3 id : SV_DispatchThreadID)
 	// Blue:  Green-remapping
 	// Alpha: Blue-remapping
     float4 heightMap = _GrassHeightMapRT.SampleLevel(linearClampSampler, uv, 0);
+	
+	float positionY = remap(heightMap.r, float2(0, 1), float2(_BoundsMin.y, _BoundsMax.y));
+	float3 positionWS = float3(positionXZ.x, positionY, positionXZ.y);
+	float4 absPosCS = abs(mul(_VPMatrix, float4(positionWS, 1.0)));
+		
+	if (absPosCS.z > absPosCS.w || absPosCS.y > absPosCS.w * 1.5 || absPosCS.x > absPosCS.w * 1.1 || absPosCS.w > _DrawDistance)
+		return;
+	
 	float mDensity = heightMap.g;
 	float mGreenRemap = remap_channel(heightMap.b, _RemapGreenChannel);
 	float mBlueRemap = remap_channel(heightMap.a, _RemapBlueChannel);
@@ -183,15 +191,7 @@ void CSMainWithoutLod(uint3 id : SV_DispatchThreadID)
     
     if (inMask)
     {
-    	// Reconstruct the Y position from the Height Map
-        float positionY = remap(heightMap.r, float2(0, 1), float2(_BoundsMin.y, _BoundsMax.y));
-        float3 positionWS = float3(positionXZ.x, positionY, positionXZ.y);
-    	float4 absPosCS = abs(mul(_VPMatrix, float4(positionWS, 1.0)));
-		
-    	if (absPosCS.z <= absPosCS.w && absPosCS.y <= absPosCS.w * 1.5 && absPosCS.x <= absPosCS.w * 1.1 && absPosCS.w <= _DrawDistance)
-    	{
-    		// Finally after succeeding all the tests our little position is appended to the buffer
-    		_GrassPositions.Append(positionWS);
-    	}
+    	// Finally after succeeding all the tests our little position is appended to the buffer
+    	_GrassPositions.Append(positionWS);
     }
 }
