@@ -506,7 +506,7 @@
                 inputData.normalWS = NormalizeNormalPerPixel(input.normalWS);
                 inputData.viewDirectionWS = GetWorldSpaceNormalizeViewDir(input.positionWS);
                 inputData.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(input.positionCS);
-                inputData.shadowCoord = TransformWorldToShadowCoord(inputData.positionWS);
+                // inputData.shadowCoord = TransformWorldToShadowCoord(inputData.positionWS);
 
                 #if defined(_DBUFFER)
                     ApplyDecalToSurfaceData(input.positionCS, surfaceData, inputData);
