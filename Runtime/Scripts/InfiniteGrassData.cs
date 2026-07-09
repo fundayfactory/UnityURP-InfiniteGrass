@@ -11,6 +11,12 @@ namespace InfiniteGrass
         public readonly List<GraphicsBuffer> PositionBuffers;
         public readonly float QualityScale;
         
+        public GraphicsFence PositionsFence;
+        public bool PositionsFenceValid;
+                
+        public GraphicsFence GBufferWriteFence;
+        public bool GBufferWriteFenceValid;
+        
         private readonly int _textureSize;
         
         public RTHandle HeightRT;

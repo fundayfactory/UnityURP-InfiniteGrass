@@ -74,6 +74,7 @@ namespace InfiniteGrass
             builder.UseTexture(passData.CameraDepthTarget, AccessFlags.ReadWrite);
             
             passData.PositionBuffers = _infiniteGrassData.PositionBuffers;
+            passData.InfiniteGrassData = _infiniteGrassData;
             
             for (var i = 0; i < passData.PositionBuffers.Count; i++)
             {
@@ -99,6 +100,9 @@ namespace InfiniteGrass
                 return;
             
             var cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
+                        
+            if (data.InfiniteGrassData.PositionsFenceValid)
+                cmd.WaitOnAsyncGraphicsFence(data.InfiniteGrassData.PositionsFence, SynchronisationStage.VertexProcessing);
 
             cmd.SetGlobalTexture(ShaderPropertyId.GrassColorRT, data.ColorTexture);
             cmd.SetGlobalTexture(ShaderPropertyId.GrassSlopeRT, data.SlopeTexture);
@@ -138,6 +142,12 @@ namespace InfiniteGrass
                         
             if (data.HasRenderingLayersTexture)
                 cmd.DisableShaderKeyword("_LIGHT_LAYERS");
+            
+            if (SystemInfo.supportsGraphicsFence)
+            {
+                data.InfiniteGrassData.GBufferWriteFence = cmd.CreateAsyncGraphicsFence();
+                data.InfiniteGrassData.GBufferWriteFenceValid = true;
+            }
         }
 
         private sealed class PassData
@@ -150,6 +160,8 @@ namespace InfiniteGrass
             public bool HasRenderingLayersTexture;
 
             public List<GraphicsBuffer> PositionBuffers;
+            public InfiniteGrassData InfiniteGrassData;
+            
             public RenderBufferLoadAction[] ColorLoadActions;
             public RenderBufferStoreAction[] ColorStoreActions;
         }
@@ -160,6 +172,36 @@ namespace InfiniteGrass
             public static readonly int GrassSlopeRT = Shader.PropertyToID("_GrassSlopeRT");
             public static readonly int GrassColorRT = Shader.PropertyToID("_GrassColorRT");
             public static readonly int GrassRenderingLayerMask = Shader.PropertyToID("_GrassRenderingLayerMask");
+        }
+    }
+    
+    internal sealed class InfiniteGrassGBufferSyncPass : ScriptableRenderPass
+    {
+        private readonly InfiniteGrassData _infiniteGrassData;
+
+        public InfiniteGrassGBufferSyncPass(InfiniteGrassData infiniteGrassData)
+        {
+            _infiniteGrassData = infiniteGrassData;
+        }
+
+        private class PassData
+        {
+            public InfiniteGrassData InfiniteGrassData;
+        }
+
+        public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameContext)
+        {
+            using var builder = renderGraph.AddUnsafePass<PassData>("Grass GBuffer Sync", out var passData);
+            passData.InfiniteGrassData = _infiniteGrassData;
+            builder.AllowPassCulling(false);
+            builder.SetRenderFunc(static (PassData data, UnsafeGraphContext context) =>
+            {
+                if (!data.InfiniteGrassData.GBufferWriteFenceValid)
+                    return;
+
+                var cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
+                cmd.WaitOnAsyncGraphicsFence(data.InfiniteGrassData.GBufferWriteFence, SynchronisationStage.PixelProcessing);
+            });
         }
     }
 }
