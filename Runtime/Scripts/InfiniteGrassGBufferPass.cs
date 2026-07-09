@@ -43,16 +43,24 @@ namespace InfiniteGrass
             
             if (gBuffer == null || gBuffer.Length == 0 || !gBuffer[0].IsValid())
                 return;
+            
+            passData.RenderingLayersTexture = resourceData.renderingLayersTexture;
+            passData.HasRenderingLayersTexture = resourceData.renderingLayersTexture.IsValid();
+ 
+            if (passData.HasRenderingLayersTexture)
+                builder.UseTexture(passData.RenderingLayersTexture, AccessFlags.ReadWrite);
+            
+            var targetLength = gBuffer.Length + (passData.HasRenderingLayersTexture ? 1 : 0);
 
             if (_colorLoadActions == null ||
                 _colorStoreActions == null ||
-                _colorLoadActions.Length != gBuffer.Length ||
-                _colorStoreActions.Length != gBuffer.Length)
+                _colorLoadActions.Length != targetLength ||
+                _colorStoreActions.Length != targetLength)
             {
-                _colorLoadActions = new RenderBufferLoadAction[gBuffer.Length];
-                _colorStoreActions = new RenderBufferStoreAction[gBuffer.Length];
+                _colorLoadActions = new RenderBufferLoadAction[targetLength];
+                _colorStoreActions = new RenderBufferStoreAction[targetLength];
 
-                for (var i = 0; i < gBuffer.Length; i++)
+                for (var i = 0; i < targetLength; i++)
                 {
                     _colorLoadActions[i] = RenderBufferLoadAction.Load;
                     _colorStoreActions[i] = RenderBufferStoreAction.Store;
@@ -102,14 +110,19 @@ namespace InfiniteGrass
 
             cmd.SetGlobalTexture(ShaderPropertyId.GrassColorRT, data.ColorTexture);
             cmd.SetGlobalTexture(ShaderPropertyId.GrassSlopeRT, data.SlopeTexture);
+            
+            var targetLength = data.GBuffer.Length + (data.HasRenderingLayersTexture ? 1 : 0);
 
-            if (_colorTargets == null || _colorTargets.Length != data.GBuffer.Length)
-                _colorTargets = new RenderTargetIdentifier[data.GBuffer.Length];
+            if (_colorTargets == null || _colorTargets.Length != targetLength)
+                _colorTargets = new RenderTargetIdentifier[targetLength];
             
             for (var i = 0; i < data.GBuffer.Length; i++)
             {
                 _colorTargets[i] = data.GBuffer[i];
             }
+
+            if (data.HasRenderingLayersTexture)
+                _colorTargets[^1] = data.RenderingLayersTexture;
 
             var binding = new RenderTargetBinding(
                 _colorTargets,
@@ -147,6 +160,7 @@ namespace InfiniteGrass
             
             public TextureHandle[] GBuffer;
             public TextureHandle CameraDepthTarget;
+            public TextureHandle RenderingLayersTexture;
             public bool HasRenderingLayersTexture;
 
             public List<GraphicsBuffer> PositionBuffers;
