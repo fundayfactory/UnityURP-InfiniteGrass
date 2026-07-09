@@ -77,6 +77,13 @@ namespace InfiniteGrass
                     builder.UseTexture(gBuffer[i], AccessFlags.ReadWrite);
             }
             
+            var dBuffer = resourceData.dBuffer;
+            for (var i = 0; i < dBuffer.Length; i++)
+            {
+                if (dBuffer[i].IsValid())
+                    builder.UseTexture(dBuffer[i]);
+            }
+            
             passData.CameraDepthTarget = resourceData.activeDepthTexture;
             
             builder.UseTexture(passData.CameraDepthTarget, AccessFlags.ReadWrite);
