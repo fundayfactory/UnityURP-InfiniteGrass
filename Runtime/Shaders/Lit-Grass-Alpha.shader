@@ -205,9 +205,10 @@
             #pragma vertex GrassDepthNormalsVert
             #pragma fragment GrassDepthNormalsFrag
             
-            #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/RenderingLayers.hlsl"
+            #pragma multi_compile_fragment _ _GBUFFER_NORMALS_OCT
             #pragma multi_compile_instancing
 
+            #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/RenderingLayers.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "InfiniteGrassCommon.hlsl"
                         
@@ -312,8 +313,16 @@
                 half4 color = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv);
                 clip(color.a - _AlphaCut0ff);
                 
+            #if defined(_GBUFFER_NORMALS_OCT)
+                float3 normalWS = normalize(input.normalWS);
+                float2 octNormalWS = PackNormalOctQuadEncode(normalWS);
+                float2 remappedOctNormalWS = saturate(octNormalWS * 0.5 + 0.5);
+                half3 packedNormalWS = PackFloat2To888(remappedOctNormalWS);
+                outNormalWS = half4(packedNormalWS, 0.0);
+            #else
                 float3 normalWS = NormalizeNormalPerPixel(input.normalWS);
                 outNormalWS = half4(normalWS, 0.0);
+            #endif
                 
             #ifdef _WRITE_RENDERING_LAYERS
                 outRenderingLayers = _GrassRenderingLayerMask & _RenderingLayerMaxInt;
@@ -352,12 +361,18 @@
             #pragma multi_compile_fragment _ _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH
             #pragma multi_compile_fragment _ _DBUFFER_MRT1 _DBUFFER_MRT2 _DBUFFER_MRT3
             #pragma multi_compile_fragment _ _RENDER_PASS_ENABLED
+            #pragma multi_compile_fragment _ _GBUFFER_NORMALS_OCT
+            #pragma multi_compile_fragment _ _REFLECTION_PROBE_BLENDING
+            #pragma multi_compile_fragment _ _REFLECTION_PROBE_BOX_PROJECTION
+            #pragma multi_compile_fragment _ _SCREEN_SPACE_REFLECTION
+            #pragma multi_compile _ _CLUSTER_LIGHT_LOOP
             #pragma multi_compile _ EVALUATE_SH_MIXED EVALUATE_SH_VERTEX 
             #pragma multi_compile_instancing
             #pragma instancing_options renderinglayer
 
             #include "Packages/com.unity.render-pipelines.universal/Shaders/LitInput.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/Shaders/LitGBufferPass.hlsl"
+            #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/GBufferOutput.hlsl"
             #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/RenderingLayers.hlsl"
             #include "InfiniteGrassCommon.hlsl"
             
