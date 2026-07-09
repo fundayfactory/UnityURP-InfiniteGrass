@@ -41,7 +41,6 @@ namespace InfiniteGrass
         private InfiniteGrassDataPass _infiniteGrassDataPass;
         private InfiniteGrassDepthNormalPass _infiniteGrassDepthNormalPass;
         private InfiniteGrassGBufferPass _infiniteGrassGBufferPass;
-        private InfiniteGrassGBufferSyncPass _infiniteGrassGBufferSyncPass;
         private InfiniteGrassRenderPass _infiniteGrassRenderPass;
 
         public override void Create()
@@ -67,11 +66,6 @@ namespace InfiniteGrass
             };
             
             _infiniteGrassGBufferPass = new InfiniteGrassGBufferPass(_infiniteGrassData)
-            {
-                renderPassEvent = RenderPassEvent.AfterRenderingGbuffer
-            };
-                        
-            _infiniteGrassGBufferSyncPass = new InfiniteGrassGBufferSyncPass(_infiniteGrassData)
             {
                 renderPassEvent = RenderPassEvent.AfterRenderingGbuffer
             };
@@ -101,7 +95,6 @@ namespace InfiniteGrass
             renderer.EnqueuePass(_infiniteGrassDataPass);
             renderer.EnqueuePass(_infiniteGrassDepthNormalPass);
             renderer.EnqueuePass(_infiniteGrassGBufferPass);
-            renderer.EnqueuePass(_infiniteGrassGBufferSyncPass);
             renderer.EnqueuePass(_infiniteGrassRenderPass);
         }
 

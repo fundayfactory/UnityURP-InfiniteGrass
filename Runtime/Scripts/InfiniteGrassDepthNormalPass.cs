@@ -51,7 +51,6 @@ namespace InfiniteGrass
                 builder.UseTexture(passData.RenderingLayersTexture, AccessFlags.ReadWrite);
             
             passData.PositionBuffers = _infiniteGrassData.PositionBuffers;
-            passData.InfiniteGrassData = _infiniteGrassData;
             
             for (var i = 0; i < passData.PositionBuffers.Count; i++)
             {
@@ -72,10 +71,7 @@ namespace InfiniteGrass
         private static void ExecutePass(PassData data, UnsafeGraphContext context)
         {
             var cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
-            
-            if (data.InfiniteGrassData.PositionsFenceValid)
-                cmd.WaitOnAsyncGraphicsFence(data.InfiniteGrassData.PositionsFence, SynchronisationStage.VertexProcessing);
-            
+
             cmd.SetGlobalTexture(ShaderPropertyId.GrassColorRT, data.ColorTexture);
             cmd.SetGlobalTexture(ShaderPropertyId.GrassSlopeRT, data.SlopeTexture);
             
@@ -130,7 +126,6 @@ namespace InfiniteGrass
             public bool HasRenderingLayersTexture;
 
             public List<GraphicsBuffer> PositionBuffers;
-            public InfiniteGrassData InfiniteGrassData;
         }
 
         private static class ShaderPropertyId

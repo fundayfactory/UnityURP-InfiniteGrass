@@ -93,7 +93,6 @@ namespace InfiniteGrass
             var resourceData = frameContext.Get<UniversalResourceData>();
 
             using var builder = renderGraph.AddUnsafePass<PassData>("Grass Data Pass", out var passData);
-            passData.InfiniteGrassData = _infiniteGrassData;
             passData.HeightTexture = renderGraph.ImportTexture(_infiniteGrassData.HeightRT);
             passData.HeightDepthTexture = renderGraph.ImportTexture(_infiniteGrassData.HeightDepthRT);
             passData.MaskTexture = renderGraph.ImportTexture(_infiniteGrassData.MaskRT);
@@ -231,16 +230,6 @@ namespace InfiniteGrass
                     
                 cmd.DispatchCompute(cs, kernelIndex, Mathf.CeilToInt((float)gridSize.x / 8), Mathf.CeilToInt((float)gridSize.y / 8), 1);
             }
-            
-            if (SystemInfo.supportsGraphicsFence)
-            {
-                data.InfiniteGrassData.PositionsFence = cmd.CreateAsyncGraphicsFence();
-                data.InfiniteGrassData.PositionsFenceValid = true;
-            }
-            else
-            {
-                data.InfiniteGrassData.PositionsFenceValid = false;
-            }
         }
 
         public bool IsSupported()
@@ -285,7 +274,6 @@ namespace InfiniteGrass
             public bool EnableLodLevels;
 
             public List<GraphicsBuffer> PositionBuffers;
-            public InfiniteGrassData InfiniteGrassData;
         }
 
         private static class ShaderPropertyId
