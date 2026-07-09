@@ -67,7 +67,7 @@ namespace InfiniteGrass
             
             _infiniteGrassGBufferPass = new InfiniteGrassGBufferPass(_infiniteGrassData)
             {
-                renderPassEvent = RenderPassEvent.BeforeRenderingGbuffer
+                renderPassEvent = RenderPassEvent.AfterRenderingGbuffer
             };
             
             _infiniteGrassRenderPass = new InfiniteGrassRenderPass(_infiniteGrassData)

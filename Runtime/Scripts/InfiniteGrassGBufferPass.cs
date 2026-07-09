@@ -123,7 +123,7 @@ namespace InfiniteGrass
             cmd.SetRenderTarget(binding);
             
             if (data.HasRenderingLayersTexture)
-                cmd.EnableShaderKeyword("_LIGHT_LAYERS");
+                cmd.EnableShaderKeyword("_WRITE_RENDERING_LAYERS");
             
             for (var i = 0; i < data.PositionBuffers.Count; i++)
             {
@@ -137,7 +137,7 @@ namespace InfiniteGrass
             }
                         
             if (data.HasRenderingLayersTexture)
-                cmd.DisableShaderKeyword("_LIGHT_LAYERS");
+                cmd.DisableShaderKeyword("_WRITE_RENDERING_LAYERS");
         }
 
         private sealed class PassData
