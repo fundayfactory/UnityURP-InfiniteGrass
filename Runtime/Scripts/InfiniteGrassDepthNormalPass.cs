@@ -41,14 +41,14 @@ namespace InfiniteGrass
             passData.CameraNormalsTexture = resourceData.cameraNormalsTexture;
             passData.CameraDepthTarget = resourceData.activeDepthTexture;
             
-            builder.UseTexture(passData.CameraNormalsTexture, AccessFlags.Write);
-            builder.UseTexture(passData.CameraDepthTarget, AccessFlags.Write);
+            builder.UseTexture(passData.CameraNormalsTexture, AccessFlags.ReadWrite);
+            builder.UseTexture(passData.CameraDepthTarget, AccessFlags.ReadWrite);
             
             passData.RenderingLayersTexture = resourceData.renderingLayersTexture;
             passData.HasRenderingLayersTexture = resourceData.renderingLayersTexture.IsValid();
  
             if (passData.HasRenderingLayersTexture)
-                builder.UseTexture(passData.RenderingLayersTexture, AccessFlags.Write);
+                builder.UseTexture(passData.RenderingLayersTexture, AccessFlags.ReadWrite);
             
             passData.PositionBuffers = _infiniteGrassData.PositionBuffers;
             
