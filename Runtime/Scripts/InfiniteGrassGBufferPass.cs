@@ -76,7 +76,14 @@ namespace InfiniteGrass
                 if (gBuffer[i].IsValid())
                     builder.UseTexture(gBuffer[i], AccessFlags.ReadWrite);
             }
-
+            
+            var dBuffer = resourceData.dBuffer;
+            for (var i = 0; i < dBuffer.Length; i++)
+            {
+                if (dBuffer[i].IsValid())
+                    builder.UseTexture(dBuffer[i]);
+            }
+            
             builder.UseAllGlobalTextures(true);
             // builder.UseGlobalTexture(ShaderPropertyId.MainLightShadowmapID);
             // builder.UseGlobalTexture(ShaderPropertyId.AdditionalLightsShadowmapID);
