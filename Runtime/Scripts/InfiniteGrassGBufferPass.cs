@@ -76,13 +76,11 @@ namespace InfiniteGrass
                 if (gBuffer[i].IsValid())
                     builder.UseTexture(gBuffer[i], AccessFlags.ReadWrite);
             }
-            
-            var dBuffer = resourceData.dBuffer;
-            for (var i = 0; i < dBuffer.Length; i++)
-            {
-                if (dBuffer[i].IsValid())
-                    builder.UseTexture(dBuffer[i]);
-            }
+
+            builder.UseAllGlobalTextures(true);
+            // builder.UseGlobalTexture(ShaderPropertyId.MainLightShadowmapID);
+            // builder.UseGlobalTexture(ShaderPropertyId.AdditionalLightsShadowmapID);
+            // builder.UseGlobalTexture(ShaderPropertyId.ScreenSpaceShadowmapID); 
             
             passData.CameraDepthTarget = resourceData.activeDepthTexture;
             
@@ -181,6 +179,10 @@ namespace InfiniteGrass
             public static readonly int GrassSlopeRT = Shader.PropertyToID("_GrassSlopeRT");
             public static readonly int GrassColorRT = Shader.PropertyToID("_GrassColorRT");
             public static readonly int GrassRenderingLayerMask = Shader.PropertyToID("_GrassRenderingLayerMask");
+            
+            public static readonly int MainLightShadowmapID = Shader.PropertyToID("_MainLightShadowmapTexture");
+            public static readonly int AdditionalLightsShadowmapID = Shader.PropertyToID("_AdditionalLightsShadowmapTexture");
+            public static readonly int ScreenSpaceShadowmapID = Shader.PropertyToID("_ScreenSpaceShadowmapTexture");
         }
     }
 }
