@@ -43,9 +43,6 @@ namespace InfiniteGrass
             builder.UseTexture(passData.CameraDepthTarget, AccessFlags.Write);
                
             builder.UseAllGlobalTextures(true);
-            // builder.UseGlobalTexture(ShaderPropertyId.MainLightShadowmapID);
-            // builder.UseGlobalTexture(ShaderPropertyId.AdditionalLightsShadowmapID);
-            // builder.UseGlobalTexture(ShaderPropertyId.ScreenSpaceShadowmapID); 
 
             passData.PositionBuffers = _infiniteGrassData.PositionBuffers;
             passData.PropertyBlock = _propertyBlock;
@@ -131,10 +128,6 @@ namespace InfiniteGrass
             public static readonly int UnitySHBb = Shader.PropertyToID("unity_SHBb");
             public static readonly int UnitySHC = Shader.PropertyToID("unity_SHC");
             public static readonly int UnityProbesOcclusion = Shader.PropertyToID("unity_ProbesOcclusion");
-                        
-            public static readonly int MainLightShadowmapID = Shader.PropertyToID("_MainLightShadowmapTexture");
-            public static readonly int AdditionalLightsShadowmapID = Shader.PropertyToID("_AdditionalLightsShadowmapTexture");
-            public static readonly int ScreenSpaceShadowmapID = Shader.PropertyToID("_ScreenSpaceShadowmapTexture");
         }
     }
 }

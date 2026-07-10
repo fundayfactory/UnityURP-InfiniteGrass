@@ -174,7 +174,7 @@ namespace InfiniteGrass
                 cmd.SetGlobalInt(ShaderPropertyId.GrassRenderingLayerMask, settings.renderingLayerMask);
                 cmd.CopyCounterValue(posBuffer, InfiniteGrassUtility.ArgsBuffers[i], 4);
                     
-                cmd.DrawMeshInstancedIndirect(InfiniteGrassUtility.Meshes[i], 0, InfiniteGrassUtility.Materials[i], InfiniteGrassStaticConfig.GBufferPassIndex, InfiniteGrassUtility.ArgsBuffers[i], 0);
+                cmd.DrawMeshInstancedIndirect(InfiniteGrassUtility.Meshes[i], 0, InfiniteGrassUtility.Materials[i], InfiniteGrassStaticConfig.GBufferPassIndex, InfiniteGrassUtility.ArgsBuffers[i], 0, mpb);
             }
                         
             if (data.HasRenderingLayersTexture)
