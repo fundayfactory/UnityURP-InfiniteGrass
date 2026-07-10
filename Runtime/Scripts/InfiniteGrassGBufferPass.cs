@@ -9,6 +9,7 @@ namespace InfiniteGrass
     internal sealed class InfiniteGrassGBufferPass : ScriptableRenderPass
     {
         private readonly InfiniteGrassData _infiniteGrassData;
+        private readonly MaterialPropertyBlock _propertyBlock;
 
         private RenderBufferLoadAction[] _colorLoadActions;
         private RenderBufferStoreAction[] _colorStoreActions;
@@ -18,6 +19,7 @@ namespace InfiniteGrass
         public InfiniteGrassGBufferPass(InfiniteGrassData infiniteGrassData)
         {
             _infiniteGrassData = infiniteGrassData;
+            _propertyBlock = new MaterialPropertyBlock();
         }
         
         public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameContext)
@@ -85,15 +87,13 @@ namespace InfiniteGrass
             }
             
             builder.UseAllGlobalTextures(true);
-            // builder.UseGlobalTexture(ShaderPropertyId.MainLightShadowmapID);
-            // builder.UseGlobalTexture(ShaderPropertyId.AdditionalLightsShadowmapID);
-            // builder.UseGlobalTexture(ShaderPropertyId.ScreenSpaceShadowmapID); 
             
             passData.CameraDepthTarget = resourceData.activeDepthTexture;
             
             builder.UseTexture(passData.CameraDepthTarget, AccessFlags.ReadWrite);
             
             passData.PositionBuffers = _infiniteGrassData.PositionBuffers;
+            passData.PropertyBlock = _propertyBlock;
             
             for (var i = 0; i < passData.PositionBuffers.Count; i++)
             {
@@ -144,6 +144,22 @@ namespace InfiniteGrass
                 RenderBufferLoadAction.Load,
                 RenderBufferStoreAction.Store
             );
+            
+                            
+            // --- Set lighting data ---
+            var mpb = data.PropertyBlock;
+            mpb.Clear();
+            mpb.SetVector(ShaderPropertyId.UnityLightData, new Vector4(1, 16, 1, 0));
+
+            var shc = new SHCoefficients(RenderSettings.ambientProbe);
+            mpb.SetVector(ShaderPropertyId.UnitySHAr, shc.SHAr);
+            mpb.SetVector(ShaderPropertyId.UnitySHAg, shc.SHAg);
+            mpb.SetVector(ShaderPropertyId.UnitySHAb, shc.SHAb);
+            mpb.SetVector(ShaderPropertyId.UnitySHBr, shc.SHBr);
+            mpb.SetVector(ShaderPropertyId.UnitySHBg, shc.SHBg);
+            mpb.SetVector(ShaderPropertyId.UnitySHBb, shc.SHBb);
+            mpb.SetVector(ShaderPropertyId.UnitySHC, shc.SHC);
+            mpb.SetVector(ShaderPropertyId.UnityProbesOcclusion, shc.ProbesOcclusion);
  
             cmd.SetRenderTarget(binding);
             
@@ -178,6 +194,8 @@ namespace InfiniteGrass
             public List<GraphicsBuffer> PositionBuffers;
             public RenderBufferLoadAction[] ColorLoadActions;
             public RenderBufferStoreAction[] ColorStoreActions;
+            
+            public MaterialPropertyBlock PropertyBlock;
         }
 
         private static class ShaderPropertyId
@@ -187,9 +205,16 @@ namespace InfiniteGrass
             public static readonly int GrassColorRT = Shader.PropertyToID("_GrassColorRT");
             public static readonly int GrassRenderingLayerMask = Shader.PropertyToID("_GrassRenderingLayerMask");
             
-            public static readonly int MainLightShadowmapID = Shader.PropertyToID("_MainLightShadowmapTexture");
-            public static readonly int AdditionalLightsShadowmapID = Shader.PropertyToID("_AdditionalLightsShadowmapTexture");
-            public static readonly int ScreenSpaceShadowmapID = Shader.PropertyToID("_ScreenSpaceShadowmapTexture");
+            public static readonly int UnityLightData = Shader.PropertyToID("unity_LightData");
+                
+            public static readonly int UnitySHAr = Shader.PropertyToID("unity_SHAr");
+            public static readonly int UnitySHAg = Shader.PropertyToID("unity_SHAg");
+            public static readonly int UnitySHAb = Shader.PropertyToID("unity_SHAb");
+            public static readonly int UnitySHBr = Shader.PropertyToID("unity_SHBr");
+            public static readonly int UnitySHBg = Shader.PropertyToID("unity_SHBg");
+            public static readonly int UnitySHBb = Shader.PropertyToID("unity_SHBb");
+            public static readonly int UnitySHC = Shader.PropertyToID("unity_SHC");
+            public static readonly int UnityProbesOcclusion = Shader.PropertyToID("unity_ProbesOcclusion");
         }
     }
 }
