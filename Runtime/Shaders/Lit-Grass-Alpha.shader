@@ -484,10 +484,10 @@
                 output.normalWS = normal;
                 output.positionWS = positionWS;
                 
-            #if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR)
-                VertexPositionInputs vertexInput = GetVertexPositionInputs(input.positionOS.xyz);
-                output.shadowCoord = GetShadowCoord(vertexInput);
-            #endif
+                #if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR)
+                    VertexPositionInputs vertexInput = GetVertexPositionInputs(input.positionOS.xyz);
+                    output.shadowCoord = GetShadowCoord(vertexInput);
+                #endif
                 
                 OUTPUT_SH4(positionWS, output.normalWS.xyz, GetWorldSpaceNormalizeViewDir(positionWS), output.vertexSH, output.probeOcclusion);
 
@@ -533,6 +533,14 @@
                 inputData.normalWS = NormalizeNormalPerPixel(input.normalWS);
                 inputData.viewDirectionWS = GetWorldSpaceNormalizeViewDir(input.positionWS);
                 inputData.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(input.positionCS);
+                
+                #if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR)
+                    inputData.shadowCoord = input.shadowCoord;
+                #elif defined(MAIN_LIGHT_CALCULATE_SHADOWS)
+                    inputData.shadowCoord = TransformWorldToShadowCoord(inputData.positionWS);
+                #else
+                    inputData.shadowCoord = float4(0, 0, 0, 0);
+                #endif
 
                 #if defined(_DBUFFER)
                     ApplyDecalToSurfaceData(input.positionCS, surfaceData, inputData);
