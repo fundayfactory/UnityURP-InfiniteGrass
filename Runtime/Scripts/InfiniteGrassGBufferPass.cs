@@ -34,6 +34,7 @@ namespace InfiniteGrass
             _infiniteGrassData.EnsureRTHandles();
             
             using var builder = renderGraph.AddUnsafePass<PassData>("Grass GBuffer Pass", out var passData);
+            
             passData.ColorTexture = renderGraph.ImportTexture(_infiniteGrassData.ColorRT);
             passData.SlopeTexture = renderGraph.ImportTexture(_infiniteGrassData.SlopeRT);
             
@@ -47,12 +48,12 @@ namespace InfiniteGrass
                 return;
             
             passData.RenderingLayersTexture = resourceData.renderingLayersTexture;
-            passData.HasRenderingLayersTexture = resourceData.renderingLayersTexture.IsValid();
+            passData.UseRenderingLayersTexture = UniversalRenderPipeline.asset.useRenderingLayers && resourceData.renderingLayersTexture.IsValid();
  
-            if (passData.HasRenderingLayersTexture)
+            if (passData.UseRenderingLayersTexture)
                 builder.UseTexture(passData.RenderingLayersTexture, AccessFlags.ReadWrite);
             
-            var targetLength = gBuffer.Length + (passData.HasRenderingLayersTexture ? 1 : 0);
+            var targetLength = gBuffer.Length + (passData.UseRenderingLayersTexture ? 1 : 0);
 
             if (_colorLoadActions == null ||
                 _colorStoreActions == null ||
@@ -79,15 +80,6 @@ namespace InfiniteGrass
                     builder.UseTexture(gBuffer[i], AccessFlags.ReadWrite);
             }
             
-            var dBuffer = resourceData.dBuffer;
-            for (var i = 0; i < dBuffer.Length; i++)
-            {
-                if (dBuffer[i].IsValid())
-                    builder.UseTexture(dBuffer[i]);
-            }
-            
-            builder.UseAllGlobalTextures(true);
-            
             passData.CameraDepthTarget = resourceData.activeDepthTexture;
             
             builder.UseTexture(passData.CameraDepthTarget, AccessFlags.ReadWrite);
@@ -98,7 +90,7 @@ namespace InfiniteGrass
             for (var i = 0; i < passData.PositionBuffers.Count; i++)
             {
                 var posBufferHandle = renderGraph.ImportBuffer(passData.PositionBuffers[i]);
-                builder.UseBuffer(posBufferHandle, AccessFlags.Read);
+                builder.UseBuffer(posBufferHandle);
             }
 
             for (var i = 0; i < InfiniteGrassUtility.ArgsBuffers.Count; i++)
@@ -106,8 +98,6 @@ namespace InfiniteGrass
                 var argsBufferHandle = renderGraph.ImportBuffer(InfiniteGrassUtility.ArgsBuffers[i]);
                 builder.UseBuffer(argsBufferHandle, AccessFlags.ReadWrite);
             }
-            
-            passData.HasRenderingLayersTexture = resourceData.renderingLayersTexture.IsValid();
 
             builder.AllowPassCulling(false);
             builder.SetRenderFunc(static (PassData data, UnsafeGraphContext context) => ExecutePass(data, context));
@@ -123,7 +113,7 @@ namespace InfiniteGrass
             cmd.SetGlobalTexture(ShaderPropertyId.GrassColorRT, data.ColorTexture);
             cmd.SetGlobalTexture(ShaderPropertyId.GrassSlopeRT, data.SlopeTexture);
             
-            var targetLength = data.GBuffer.Length + (data.HasRenderingLayersTexture ? 1 : 0);
+            var targetLength = data.GBuffer.Length + (data.UseRenderingLayersTexture ? 1 : 0);
 
             if (_colorTargets == null || _colorTargets.Length != targetLength)
                 _colorTargets = new RenderTargetIdentifier[targetLength];
@@ -133,7 +123,7 @@ namespace InfiniteGrass
                 _colorTargets[i] = data.GBuffer[i];
             }
 
-            if (data.HasRenderingLayersTexture)
+            if (data.UseRenderingLayersTexture)
                 _colorTargets[^1] = data.RenderingLayersTexture;
 
             var binding = new RenderTargetBinding(
@@ -145,7 +135,6 @@ namespace InfiniteGrass
                 RenderBufferStoreAction.Store
             );
             
-                            
             // --- Set lighting data ---
             var mpb = data.PropertyBlock;
             mpb.Clear();
@@ -163,7 +152,7 @@ namespace InfiniteGrass
  
             cmd.SetRenderTarget(binding);
             
-            if (data.HasRenderingLayersTexture)
+            if (data.UseRenderingLayersTexture)
                 cmd.EnableShaderKeyword("_WRITE_RENDERING_LAYERS");
             
             for (var i = 0; i < data.PositionBuffers.Count; i++)
@@ -177,7 +166,7 @@ namespace InfiniteGrass
                 cmd.DrawMeshInstancedIndirect(InfiniteGrassUtility.Meshes[i], 0, InfiniteGrassUtility.Materials[i], InfiniteGrassStaticConfig.GBufferPassIndex, InfiniteGrassUtility.ArgsBuffers[i], 0, mpb);
             }
                         
-            if (data.HasRenderingLayersTexture)
+            if (data.UseRenderingLayersTexture)
                 cmd.DisableShaderKeyword("_WRITE_RENDERING_LAYERS");
         }
 
@@ -189,7 +178,7 @@ namespace InfiniteGrass
             public TextureHandle[] GBuffer;
             public TextureHandle CameraDepthTarget;
             public TextureHandle RenderingLayersTexture;
-            public bool HasRenderingLayersTexture;
+            public bool UseRenderingLayersTexture;
 
             public List<GraphicsBuffer> PositionBuffers;
             public RenderBufferLoadAction[] ColorLoadActions;

@@ -29,6 +29,7 @@ namespace InfiniteGrass
             _infiniteGrassData.EnsureRTHandles();
 
             using var builder = renderGraph.AddUnsafePass<PassData>("Grass Forward Pass", out var passData);
+            
             passData.ColorTexture = renderGraph.ImportTexture(_infiniteGrassData.ColorRT);
             passData.SlopeTexture = renderGraph.ImportTexture(_infiniteGrassData.SlopeRT);
             
@@ -41,8 +42,6 @@ namespace InfiniteGrass
             
             builder.UseTexture(passData.CameraColorTarget, AccessFlags.Write);
             builder.UseTexture(passData.CameraDepthTarget, AccessFlags.Write);
-               
-            builder.UseAllGlobalTextures(true);
 
             passData.PositionBuffers = _infiniteGrassData.PositionBuffers;
             passData.PropertyBlock = _propertyBlock;

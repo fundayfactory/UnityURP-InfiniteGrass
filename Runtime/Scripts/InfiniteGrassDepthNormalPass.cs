@@ -8,9 +8,10 @@ namespace InfiniteGrass
 {
     internal sealed class InfiniteGrassDepthNormalPass : ScriptableRenderPass
     {
+        private static readonly RenderBufferLoadAction[] ColorLoadActions = { RenderBufferLoadAction.Load, RenderBufferLoadAction.Load };
+        private static readonly RenderBufferStoreAction[] ColorStoreActions = { RenderBufferStoreAction.Store, RenderBufferStoreAction.Store };
+        
         private static RenderTargetIdentifier[] _colorTargets;
-        private static readonly RenderBufferLoadAction[] _colorLoadActions = { RenderBufferLoadAction.Load, RenderBufferLoadAction.Load };
-        private static readonly RenderBufferStoreAction[] _colorStoreActions = { RenderBufferStoreAction.Store, RenderBufferStoreAction.Store };
         
         private readonly InfiniteGrassData _infiniteGrassData;
             
@@ -31,6 +32,7 @@ namespace InfiniteGrass
             _infiniteGrassData.EnsureRTHandles();
             
             using var builder = renderGraph.AddUnsafePass<PassData>("Grass Depth Normal Pass", out var passData);
+            
             passData.ColorTexture = renderGraph.ImportTexture(_infiniteGrassData.ColorRT);
             passData.SlopeTexture = renderGraph.ImportTexture(_infiniteGrassData.SlopeRT);
             
@@ -45,7 +47,7 @@ namespace InfiniteGrass
             builder.UseTexture(passData.CameraDepthTarget, AccessFlags.ReadWrite);
             
             passData.RenderingLayersTexture = resourceData.renderingLayersTexture;
-            passData.HasRenderingLayersTexture = resourceData.renderingLayersTexture.IsValid();
+            passData.HasRenderingLayersTexture = UniversalRenderPipeline.asset.useRenderingLayers && resourceData.renderingLayersTexture.IsValid();
  
             if (passData.HasRenderingLayersTexture)
                 builder.UseTexture(passData.RenderingLayersTexture, AccessFlags.ReadWrite);
@@ -83,8 +85,8 @@ namespace InfiniteGrass
  
                 var binding = new RenderTargetBinding(
                     _colorTargets,
-                    _colorLoadActions,
-                    _colorStoreActions,
+                    ColorLoadActions,
+                    ColorStoreActions,
                     data.CameraDepthTarget,
                     RenderBufferLoadAction.Load,
                     RenderBufferStoreAction.Store
